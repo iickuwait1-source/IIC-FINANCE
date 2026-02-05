@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>IIC Kuwait Finance Store</title>
+  <title>IIC Kuwait Finance Store (Cloud)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- jsPDF CDN -->
@@ -218,6 +218,9 @@
       margin-top: 10px;
       font-size: 13px;
     }
+    .status-ok { border-color:#16a34a; background:#f0fdf4; }
+    .status-warn { border-color:#f59e0b; background:#fffbeb; }
+    .status-bad { border-color:#dc2626; background:#fef2f2; }
 
     @media (max-width: 768px) {
       body { padding: 6px; }
@@ -257,22 +260,22 @@
       </div>
     </div>
     <div id="loginMsg" class="error-msg"></div>
-    <div class="small mt-5"><strong>Auto-save:</strong> All data saved automatically to browser localStorage.</div>
+    <div class="small mt-5">
+      <strong>Cloud Sync:</strong> Data stored in Firebase Firestore (same on PC + Mobile). Backup/Restore still available.
+    </div>
   </div>
 
   <!-- App -->
   <div id="app">
 
     <!-- Status Bar -->
-    <div class="status-bar" id="statusBar" style="display:none;">
-      <strong>✓ Auto-saved</strong> - Data stored in browser localStorage
-    </div>
+    <div class="status-bar" id="statusBar" style="display:none;"></div>
 
-    <!-- Backup / Restore -->
+    <!-- Backup / Restore + Cloud Tools -->
     <div class="card" style="margin-top:10px;">
       <h2 style="margin-bottom:8px;">Backup & Restore</h2>
       <div class="small" style="margin-bottom:10px;">
-        Backup downloads a file (Opening + Transactions + Categories). Restore loads it back into this browser.
+        Backup downloads a file (Opening + Transactions + Categories). Restore loads it back. Cloud sync keeps all devices same.
       </div>
 
       <div class="btn-group">
@@ -280,6 +283,8 @@
         <button class="btn btn-warning" id="restoreBtn">Restore (Upload)</button>
         <button class="btn btn-primary" id="copyBackupBtn">Copy Backup (Text)</button>
         <button class="btn btn-warning" id="pasteRestoreBtn">Paste Restore (Text)</button>
+        <button class="btn btn-success" id="cloudPullBtn">Cloud Pull (Reload)</button>
+        <button class="btn btn-secondary" id="cloudPushBtn">Cloud Push (Upload Local)</button>
       </div>
 
       <input type="file" id="restoreFile" accept=".json,application/json" style="display:none;" />
@@ -298,6 +303,8 @@
         </div>
         <div class="small mt-5">Tip: Use this if upload is blocked on your device.</div>
       </div>
+
+      <div class="small mt-10" id="cloudInfo"></div>
     </div>
 
     <!-- Dashboard -->
@@ -592,11 +599,49 @@
   </div>
 </div>
 
-<script>
+<!-- MAIN APP SCRIPT (MODULE) -->
+<script type="module">
+  /***********************
+   * FIREBASE (Firestore)
+   ***********************/
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc,
+    collection,
+    getDocs,
+    addDoc,
+    writeBatch,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAe8-0MxZ6qN_LpzHGRBoRgx6-bY_dyfeg",
+    authDomain: "iic-finance.firebaseapp.com",
+    projectId: "iic-finance",
+    storageBucket: "iic-finance.firebasestorage.app",
+    messagingSenderId: "408364819653",
+    appId: "1:408364819653:web:d2f34794b937875ccd3cac"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+
+  // Firestore paths
+  const DOC_STATE = doc(db, "finance", "state");      // openingBalances + categories + updatedAt
+  const DOC_LAST_REPORT = doc(db, "finance", "lastReport");
+  const COL_TX = collection(db, "transactions");
+
+  /***********************
+   * LOGIN
+   ***********************/
   const VALID_USER = "sahad";
   const VALID_PASS = "sa&4Er6A@Q";
 
-  /* IMPORTANT: keep keys same to NOT lose existing data */
+  /* IMPORTANT: keep keys same to NOT lose existing local data (used as cache/backup) */
   const LS_OPENING = "iic_fin_opening";
   const LS_TX = "iic_fin_transactions";
   const LS_LAST_REPORT = "iic_fin_last_report";
@@ -607,7 +652,7 @@
     "Zakat": { opening: 0, current: 0 },
     "Other": { opening: 0, current: 0 }
   };
-  let transactions = [];
+  let transactions = [];   // each item may include _docId for firestore
   let categorySet = new Set();
   let editingIndex = null;
 
@@ -621,7 +666,9 @@
   const loginMsg = document.getElementById("loginMsg");
   const loginCard = document.getElementById("loginCard");
   const appDiv = document.getElementById("app");
+
   const statusBar = document.getElementById("statusBar");
+  const cloudInfo = document.getElementById("cloudInfo");
 
   const openingTableBody = document.querySelector("#openingTable tbody");
   const totalOpeningCell = document.getElementById("totalOpening");
@@ -689,10 +736,16 @@
   const applyRestoreTextBtn = document.getElementById("applyRestoreTextBtn");
   const cancelRestoreTextBtn = document.getElementById("cancelRestoreTextBtn");
 
-  function showStatus(msg) {
+  // Cloud tools
+  const cloudPullBtn = document.getElementById("cloudPullBtn");
+  const cloudPushBtn = document.getElementById("cloudPushBtn");
+
+  function showStatus(msg, kind="ok") {
     statusBar.textContent = msg;
+    statusBar.classList.remove("status-ok","status-warn","status-bad");
+    statusBar.classList.add(kind==="warn"?"status-warn":kind==="bad"?"status-bad":"status-ok");
     statusBar.style.display = "block";
-    setTimeout(() => { statusBar.style.display = "none"; }, 2500);
+    setTimeout(() => { statusBar.style.display = "none"; }, 2600);
   }
 
   function n3(x) {
@@ -722,31 +775,24 @@
     return 0;
   }
 
-  function loadFromStorage() {
-    try {
-      const ob = localStorage.getItem(LS_OPENING);
-      const tx = localStorage.getItem(LS_TX);
-      const cat = localStorage.getItem(LS_CATEGORIES);
-      const lr = localStorage.getItem(LS_LAST_REPORT);
-
-      if (ob) openingBalances = JSON.parse(ob);
-      if (tx) transactions = JSON.parse(tx);
-      if (cat) categorySet = new Set(JSON.parse(cat));
-      if (lr) lastReport = JSON.parse(lr);
-    } catch (e) { console.error("Storage load error", e); }
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
-  function saveToStorage() {
-    try {
-      localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
-      localStorage.setItem(LS_TX, JSON.stringify(transactions));
-      localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
-      if (lastReport) localStorage.setItem(LS_LAST_REPORT, JSON.stringify(lastReport));
-      showStatus("✓ Auto-saved to browser");
-    } catch (e) {
-      console.error("Storage save error", e);
-      showStatus("⚠ Save failed - check browser storage");
-    }
+  function normalize(s) { return String(s || "").toLowerCase(); }
+
+  function ensureItemExists(header) {
+    if (!openingBalances[header]) openingBalances[header] = { opening: 0, current: 0 };
+  }
+
+  function rebuildCategorySetFromTransactions() {
+    categorySet = new Set();
+    transactions.forEach(t => { if (t.category) categorySet.add(t.category); });
   }
 
   function updateCategoryDatalist() {
@@ -759,37 +805,225 @@
     });
   }
 
-  function ensureItemExists(header) {
-    if (!openingBalances[header]) openingBalances[header] = { opening: 0, current: 0 };
+  function uniqueSorted(arr) {
+    return Array.from(new Set(arr.filter(x => String(x || "").trim() !== "")))
+      .sort((a,b)=>String(a).localeCompare(String(b)));
   }
 
-  // Login
-  loginBtn.addEventListener("click", function () {
-    const u = loginUser.value.trim();
-    const p = loginPass.value;
-    if (u === VALID_USER && p === VALID_PASS) {
-      loginMsg.textContent = "";
-      loginCard.style.display = "none";
-      appDiv.style.display = "block";
-      initPage();
-    } else {
-      loginMsg.textContent = "Unauthorized login. Access denied.";
+  function refreshFiltersUI() {
+    // Units
+    const units = uniqueSorted(transactions.map(t => t.unit));
+    const currentUnit = unitFilter.value || "__all__";
+    unitFilter.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
+    if ([ "__all__", ...units ].includes(currentUnit)) unitFilter.value = currentUnit;
+
+    // Report units
+    const repU = repUnitSel.value || "__all__";
+    repUnitSel.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
+    if ([ "__all__", ...units ].includes(repU)) repUnitSel.value = repU;
+
+    // Items (headers)
+    const items = uniqueSorted(Object.keys(openingBalances));
+    const repI = repItem.value || "__all__";
+    repItem.innerHTML = `<option value="__all__">All Items</option>` + items.map(it => `<option value="${escapeHtml(it)}">${escapeHtml(it)}</option>`).join("");
+    if ([ "__all__", ...items ].includes(repI)) repItem.value = repI;
+  }
+
+  /***********************
+   * LOCAL STORAGE (CACHE)
+   ***********************/
+  function loadFromLocalCache() {
+    try {
+      const ob = localStorage.getItem(LS_OPENING);
+      const tx = localStorage.getItem(LS_TX);
+      const cat = localStorage.getItem(LS_CATEGORIES);
+      const lr = localStorage.getItem(LS_LAST_REPORT);
+
+      if (ob) openingBalances = JSON.parse(ob);
+      if (tx) transactions = JSON.parse(tx);
+      if (cat) categorySet = new Set(JSON.parse(cat));
+      if (lr) lastReport = JSON.parse(lr);
+    } catch (e) { console.error("Local cache load error", e); }
+  }
+
+  function saveToLocalCache() {
+    try {
+      localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
+      localStorage.setItem(LS_TX, JSON.stringify(transactions));
+      localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
+      if (lastReport) localStorage.setItem(LS_LAST_REPORT, JSON.stringify(lastReport));
+    } catch (e) {
+      console.error("Local cache save error", e);
     }
-  });
-
-  function initPage() {
-    loadFromStorage();
-    rebuildCategorySetFromTransactions();
-    updateCategoryDatalist();
-    renderOpeningTable();
-    refreshFiltersUI();       // build unit/item dropdowns
-    renderTransactionTable(); // uses filters
-    updateTotals();
-    updateDashboardTotals();
-    setTodayDefault();
-    applyReportPreset();      // set report defaults
   }
 
+  /***********************
+   * FIRESTORE LOAD/SAVE
+   ***********************/
+  async function cloudLoad() {
+    // state
+    const stateSnap = await getDoc(DOC_STATE);
+    let cloudHasState = false;
+
+    if (stateSnap.exists()) {
+      const d = stateSnap.data();
+      if (d && d.openingBalances && typeof d.openingBalances === "object") {
+        openingBalances = d.openingBalances;
+        cloudHasState = true;
+      }
+      if (d && Array.isArray(d.categories)) {
+        categorySet = new Set(d.categories);
+      }
+      if (d && d.updatedAt) {
+        cloudInfo.textContent = "Cloud: state loaded.";
+      }
+    }
+
+    // transactions
+    const txSnap = await getDocs(COL_TX);
+    const cloudTx = [];
+    txSnap.forEach(docu => {
+      cloudTx.push({ _docId: docu.id, ...docu.data() });
+    });
+
+    // last report (optional)
+    const lrSnap = await getDoc(DOC_LAST_REPORT);
+    if (lrSnap.exists()) lastReport = lrSnap.data();
+
+    return { cloudHasState, cloudTxCount: cloudTx.length, cloudTx };
+  }
+
+  async function cloudSaveState() {
+    await setDoc(DOC_STATE, {
+      openingBalances,
+      categories: Array.from(categorySet),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+
+  async function cloudUpsertTransaction(t) {
+    // If has _docId, overwrite it. Else create new.
+    if (t._docId) {
+      await setDoc(doc(db, "transactions", t._docId), stripInternal(t), { merge: true });
+      return t._docId;
+    } else {
+      const created = await addDoc(COL_TX, stripInternal(t));
+      t._docId = created.id;
+      return created.id;
+    }
+  }
+
+  async function cloudDeleteTransaction(docId) {
+    if (!docId) return;
+    await deleteDoc(doc(db, "transactions", docId));
+  }
+
+  function stripInternal(t) {
+    const copy = { ...t };
+    delete copy._docId;
+    return copy;
+  }
+
+  async function cloudPushAllLocalToCloud(overwrite=true) {
+    // WARNING: This will REPLACE cloud with local.
+    // We'll delete existing cloud tx then re-add.
+    const txSnap = await getDocs(COL_TX);
+    const batch = writeBatch(db);
+
+    txSnap.forEach(d => batch.delete(doc(db, "transactions", d.id)));
+    await batch.commit();
+
+    // Write state first
+    await cloudSaveState();
+
+    // Re-add tx
+    const batch2 = writeBatch(db);
+    transactions.forEach((t) => {
+      // create deterministic doc ids? We will just set with auto ids by addDoc is not possible in batch.
+      // Use setDoc with generated IDs: "tx_<id>_<date>_<rand>" to keep stable
+    });
+
+    // We'll add sequentially (safe and simple)
+    for (const t of transactions) {
+      t._docId = null;
+      await cloudUpsertTransaction(t);
+    }
+
+    // Save last report (optional)
+    if (lastReport) await setDoc(DOC_LAST_REPORT, lastReport, { merge: true });
+
+    saveToLocalCache();
+  }
+
+  /***********************
+   * MIGRATION LOGIC
+   ***********************/
+  async function initialSyncStrategy() {
+    // 1) Load local cache (so you don't lose your existing PC data)
+    loadFromLocalCache();
+
+    // 2) Load cloud
+    let cloud = null;
+    try {
+      cloud = await cloudLoad();
+    } catch (e) {
+      console.error(e);
+      cloudInfo.textContent = "Cloud: cannot load (check Firestore rules / internet). Using local cache.";
+      showStatus("⚠ Cloud load failed. Using local cache.", "warn");
+      return; // stay on local cache only
+    }
+
+    // 3) Decide what to use
+    const localTxCount = Array.isArray(transactions) ? transactions.length : 0;
+    const cloudTxCount = cloud.cloudTxCount;
+
+    // If cloud has data -> use cloud as source of truth
+    if (cloudTxCount > 0 || cloud.cloudHasState) {
+      transactions = cloud.cloudTx || [];
+      // Ensure opening balances exist even if missing
+      if (!openingBalances || typeof openingBalances !== "object") {
+        openingBalances = {
+          "Working Fund": { opening: 0, current: 0 },
+          "Zakat": { opening: 0, current: 0 },
+          "Other": { opening: 0, current: 0 }
+        };
+      }
+      rebuildCategorySetFromTransactions();
+      updateCategoryDatalist();
+      saveToLocalCache();
+      cloudInfo.textContent = `Cloud: loaded ${cloudTxCount} transactions.`;
+      showStatus("✓ Cloud data loaded", "ok");
+      return;
+    }
+
+    // Cloud empty but local has data -> offer to upload local to cloud
+    if (cloudTxCount === 0 && localTxCount > 0) {
+      cloudInfo.textContent = `Cloud is empty. Local has ${localTxCount} entries.`;
+      const ok = confirm(
+        "Cloud is empty, but this device has existing data.\n\nDo you want to UPLOAD your local data to Cloud now?\n\n(After upload, mobile will show the same data.)"
+      );
+      if (ok) {
+        try {
+          await cloudPushAllLocalToCloud(true);
+          cloudInfo.textContent = `Cloud updated from local (${localTxCount} entries).`;
+          showStatus("✓ Uploaded local data to Cloud", "ok");
+        } catch (e) {
+          console.error(e);
+          showStatus("⚠ Upload failed. Check Firestore rules.", "warn");
+        }
+      } else {
+        showStatus("ℹ Using local data only (cloud still empty).", "warn");
+      }
+      return;
+    }
+
+    // Both empty -> do nothing
+    cloudInfo.textContent = "Cloud is empty. Start adding entries.";
+  }
+
+  /***********************
+   * UI RENDERING
+   ***********************/
   function setTodayDefault() {
     const today = new Date().toISOString().substring(0, 10);
     if (!txDate.value) txDate.value = today;
@@ -806,7 +1040,7 @@
       const rowData = openingBalances[key];
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${key}</td>
+        <td>${escapeHtml(key)}</td>
         <td class="text-right">${n3(rowData.opening).toFixed(3)}</td>
         <td class="text-right">${n3(rowData.current).toFixed(3)}</td>
       `;
@@ -819,233 +1053,27 @@
     totalCurrentCell.textContent = totalCurrent.toFixed(3);
   }
 
-  // Add/Edit/Cancel handlers
-  function setupFormButtons() {
-    formButtons.innerHTML = `<button class="btn btn-success" id="addTxBtn">+ Add Entry</button>`;
-    document.getElementById("addTxBtn").addEventListener("click", handleAddEdit);
-  }
-
-  function enterEditMode(idx) {
-    editingIndex = idx;
-    const t = transactions[idx];
-    txDate.value = t.date || "";
-    txUnit.value = t.unit || "";
-    txType.value = t.type || "income";
-    txHeader.value = t.header || "";
-    txShortCode.value = t.shortCode || "";
-    txCategory.value = t.category || "";
-    txDesc.value = t.description || "";
-    txAmount.value = n3(t.amount);
-    txRemarks.value = t.remarks || "";
-
-    formButtons.innerHTML = `
-      <button class="btn btn-success" id="saveEditBtn">Save Changes</button>
-      <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
-    `;
-    document.getElementById("saveEditBtn").addEventListener("click", handleAddEdit);
-    document.getElementById("cancelEditBtn").addEventListener("click", cancelEdit);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-  window.enterEditMode = enterEditMode;
-
-  function cancelEdit() {
-    editingIndex = null;
-    clearTxForm();
-    setupFormButtons();
-  }
-
-  function handleAddEdit() {
-    const date = txDate.value;
-    const unit = txUnit.value.trim();
-    const type = txType.value;
-    const header = txHeader.value.trim() || "Other";
-    const shortCode = txShortCode.value.trim();
-    const category = txCategory.value.trim();
-    const description = txDesc.value.trim();
-    const amount = parseFloat(txAmount.value);
-    const remarks = txRemarks.value.trim();
-
-    if (!date || isNaN(amount) || amount <= 0) {
-      alert("Please enter date and a positive amount.");
-      return;
-    }
-
-    ensureItemExists(header);
-    if (category) categorySet.add(category);
-
-    if (editingIndex !== null) {
-      const old = transactions[editingIndex];
-      const oldHeader = old.header || "Other";
-      const oldAmount = n3(old.amount);
-      ensureItemExists(oldHeader);
-
-      reverseTransactionEffect(oldHeader, old.type, oldAmount);
-
-      const newTx = { id: old.id, date, unit, type, header, shortCode, category, description, amount, remarks };
-      transactions[editingIndex] = newTx;
-
-      applyTransactionEffect(header, type, amount);
-    } else {
-      const tx = { id: transactions.length + 1, date, unit, type, header, shortCode, category, description, amount, remarks };
-      transactions.push(tx);
-      applyTransactionEffect(header, type, amount);
-    }
-
-    saveToStorage();
-    rebuildCategorySetFromTransactions();
-    updateCategoryDatalist();
-    renderOpeningTable();
-    refreshFiltersUI();
-    renderTransactionTable();
-    updateTotals();
-    updateDashboardTotals();
-    clearTxForm();
-    setupFormButtons();
-  }
-
-  function applyTransactionEffect(header, type, amount) {
-    ensureItemExists(header);
-    const amt = n3(amount);
-    if (type === "income") {
-      openingBalances[header].opening = n3(openingBalances[header].opening) + amt;
-      openingBalances[header].current = n3(openingBalances[header].current) + amt;
-    } else if (type === "expense") {
-      openingBalances[header].current = n3(openingBalances[header].current) - amt;
-    } else if (type === "receivable") {
-      openingBalances[header].current = n3(openingBalances[header].current) - amt;
-    } else if (type === "return-receivable") {
-      openingBalances[header].current = n3(openingBalances[header].current) + amt;
-    }
-  }
-
-  function reverseTransactionEffect(header, type, amount) {
-    ensureItemExists(header);
-    const amt = n3(amount);
-    if (type === "income") {
-      openingBalances[header].opening = n3(openingBalances[header].opening) - amt;
-      openingBalances[header].current = n3(openingBalances[header].current) - amt;
-    } else if (type === "expense") {
-      openingBalances[header].current = n3(openingBalances[header].current) + amt;
-    } else if (type === "receivable") {
-      openingBalances[header].current = n3(openingBalances[header].current) + amt;
-    } else if (type === "return-receivable") {
-      openingBalances[header].current = n3(openingBalances[header].current) - amt;
-    }
-  }
-
-  function clearTxForm() {
-    const today = new Date().toISOString().substring(0, 10);
-    txDate.value = today;
-    txUnit.value = "";
-    txType.value = "income";
-    txHeader.value = "";
-    txShortCode.value = "";
-    txCategory.value = "";
-    txDesc.value = "";
-    txAmount.value = "";
-    txRemarks.value = "";
-    editingIndex = null;
-  }
-
-  // DELETE ENTRY
-  function deleteEntry(idx) {
-    const t = transactions[idx];
-    if (!t) return;
-
-    const msg = `Delete entry?\n\n${t.date} | ${t.unit} | ${typeLabel(t.type)} | ${t.header} | ${n3(t.amount).toFixed(3)} KD`;
-    if (!confirm(msg)) return;
-
-    // reverse its effect first
-    reverseTransactionEffect(t.header || "Other", t.type, n3(t.amount));
-
-    // remove
-    transactions.splice(idx, 1);
-
-    saveToStorage();
-    rebuildCategorySetFromTransactions();
-    updateCategoryDatalist();
-    renderOpeningTable();
-    refreshFiltersUI();
-    renderTransactionTable();
-    updateTotals();
-    updateDashboardTotals();
-
-    showStatus("✓ Entry deleted");
-  }
-  window.deleteEntry = deleteEntry;
-
-  // SEARCH + UNIT FILTER
-  function normalize(s) { return String(s || "").toLowerCase(); }
-
-  function getFilteredView() {
-    const q = normalize(txSearch.value).trim();
-    const u = unitFilter.value;
-
-    const out = [];
-    transactions.forEach((t, idx) => {
-      if (u !== "__all__" && String(t.unit || "") !== u) return;
-
-      if (q) {
-        const hay = [
-          t.date, t.unit, t.type, t.header, t.shortCode, t.category,
-          t.description, t.remarks
-        ].map(normalize).join(" ");
-        if (!hay.includes(q)) return;
-      }
-
-      out.push({ idx, t });
-    });
-    return out;
-  }
-
-  function renderTransactionTable() {
-    txTableBody.innerHTML = "";
-    const view = getFilteredView();
-
-    txFilterMeta.textContent = `Showing ${view.length} of ${transactions.length} entries`;
-
-    view.forEach((row, displayIndex) => {
-      const { idx, t } = row;
-
-      const tr = document.createElement("tr");
-      const sign = (t.type === "expense" || t.type === "receivable") ? "-" : "";
-      const badgeClass =
-        t.type === "income" ? "badge-income" :
-        t.type === "expense" ? "badge-expense" :
-        "badge-receivable";
-
-      tr.innerHTML = `
-        <td>${displayIndex + 1}</td>
-        <td>${t.date || ""}</td>
-        <td>${t.unit || ""}</td>
-        <td><span class="badge ${badgeClass}">${typeLabel(t.type)}</span></td>
-        <td>${t.header || ""}</td>
-        <td>${t.shortCode || ""}</td>
-        <td>${t.category || ""}</td>
-        <td>${t.description || ""}</td>
-        <td class="text-right">${sign}${n3(t.amount).toFixed(3)}</td>
-        <td>${t.remarks || ""}</td>
-        <td>
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:6px;" onclick="enterEditMode(${idx})">Edit</button>
-          <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteEntry(${idx})">Delete</button>
-        </td>
-      `;
-      txTableBody.appendChild(tr);
-    });
-  }
-
   function updateTotals() {
     let totalCurrent = 0;
     Object.keys(openingBalances).forEach(key => { totalCurrent += n3(openingBalances[key].current); });
     footerTotalBalance.textContent = totalCurrent.toFixed(3);
   }
 
-  function rebuildCategorySetFromTransactions() {
-    categorySet = new Set();
-    transactions.forEach(t => { if (t.category) categorySet.add(t.category); });
+  function renderDashboardItems() {
+    dashItemsGrid.innerHTML = "";
+    const keys = Object.keys(openingBalances).sort((a,b)=>a.localeCompare(b));
+    keys.forEach(item => {
+      const cur = n3(openingBalances[item].current);
+      const card = document.createElement("div");
+      card.className = "metric-card";
+      card.innerHTML = `
+        <div class="metric-label">${escapeHtml(item)}</div>
+        <div class="metric-value">${fmtKD(cur)}</div>
+      `;
+      dashItemsGrid.appendChild(card);
+    });
   }
 
-  // Dashboard: 5 metrics + item cards
   function updateDashboardTotals() {
     let totalBalance = 0;
     Object.keys(openingBalances).forEach(k => { totalBalance += n3(openingBalances[k].current); });
@@ -1082,55 +1110,285 @@
     renderDashboardItems();
   }
 
-  function renderDashboardItems() {
-    dashItemsGrid.innerHTML = "";
-    const keys = Object.keys(openingBalances).sort((a,b)=>a.localeCompare(b));
-    keys.forEach(item => {
-      const cur = n3(openingBalances[item].current);
-      const card = document.createElement("div");
-      card.className = "metric-card";
-      card.innerHTML = `
-        <div class="metric-label">${item}</div>
-        <div class="metric-value">${fmtKD(cur)}</div>
+  function getFilteredView() {
+    const q = normalize(txSearch.value).trim();
+    const u = unitFilter.value;
+
+    const out = [];
+    transactions.forEach((t, idx) => {
+      if (u !== "__all__" && String(t.unit || "") !== u) return;
+
+      if (q) {
+        const hay = [
+          t.date, t.unit, t.type, t.header, t.shortCode, t.category,
+          t.description, t.remarks
+        ].map(normalize).join(" ");
+        if (!hay.includes(q)) return;
+      }
+
+      out.push({ idx, t });
+    });
+    return out;
+  }
+
+  function renderTransactionTable() {
+    txTableBody.innerHTML = "";
+    const view = getFilteredView();
+    txFilterMeta.textContent = `Showing ${view.length} of ${transactions.length} entries`;
+
+    view.forEach((row, displayIndex) => {
+      const { idx, t } = row;
+
+      const tr = document.createElement("tr");
+      const sign = (t.type === "expense" || t.type === "receivable") ? "-" : "";
+      const badgeClass =
+        t.type === "income" ? "badge-income" :
+        t.type === "expense" ? "badge-expense" :
+        "badge-receivable";
+
+      tr.innerHTML = `
+        <td>${displayIndex + 1}</td>
+        <td>${escapeHtml(t.date || "")}</td>
+        <td>${escapeHtml(t.unit || "")}</td>
+        <td><span class="badge ${badgeClass}">${escapeHtml(typeLabel(t.type))}</span></td>
+        <td>${escapeHtml(t.header || "")}</td>
+        <td>${escapeHtml(t.shortCode || "")}</td>
+        <td>${escapeHtml(t.category || "")}</td>
+        <td>${escapeHtml(t.description || "")}</td>
+        <td class="text-right">${sign}${n3(t.amount).toFixed(3)}</td>
+        <td>${escapeHtml(t.remarks || "")}</td>
+        <td>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:6px;" data-edit="${idx}">Edit</button>
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" data-del="${idx}">Delete</button>
+        </td>
       `;
-      dashItemsGrid.appendChild(card);
+      txTableBody.appendChild(tr);
+    });
+
+    // attach handlers
+    txTableBody.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.addEventListener("click", () => enterEditMode(Number(btn.dataset.edit)));
+    });
+    txTableBody.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", () => deleteEntry(Number(btn.dataset.del)));
     });
   }
 
-  // Build Unit dropdown + Report dropdowns
-  function uniqueSorted(arr) {
-    return Array.from(new Set(arr.filter(x => String(x || "").trim() !== ""))).sort((a,b)=>String(a).localeCompare(String(b)));
+  /***********************
+   * TRANSACTION EFFECTS
+   ***********************/
+  function applyTransactionEffect(header, type, amount) {
+    ensureItemExists(header);
+    const amt = n3(amount);
+    if (type === "income") {
+      openingBalances[header].opening = n3(openingBalances[header].opening) + amt;
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    } else if (type === "expense") {
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
+    } else if (type === "receivable") {
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
+    } else if (type === "return-receivable") {
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    }
   }
 
-  function refreshFiltersUI() {
-    // Units
-    const units = uniqueSorted(transactions.map(t => t.unit));
-    const currentUnit = unitFilter.value || "__all__";
-    unitFilter.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
-    if ([ "__all__", ...units ].includes(currentUnit)) unitFilter.value = currentUnit;
-
-    // Report units
-    const repU = repUnitSel.value || "__all__";
-    repUnitSel.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
-    if ([ "__all__", ...units ].includes(repU)) repUnitSel.value = repU;
-
-    // Items (headers)
-    const items = uniqueSorted(Object.keys(openingBalances));
-    const repI = repItem.value || "__all__";
-    repItem.innerHTML = `<option value="__all__">All Items</option>` + items.map(it => `<option value="${escapeHtml(it)}">${escapeHtml(it)}</option>`).join("");
-    if ([ "__all__", ...items ].includes(repI)) repItem.value = repI;
+  function reverseTransactionEffect(header, type, amount) {
+    ensureItemExists(header);
+    const amt = n3(amount);
+    if (type === "income") {
+      openingBalances[header].opening = n3(openingBalances[header].opening) - amt;
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
+    } else if (type === "expense") {
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    } else if (type === "receivable") {
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    } else if (type === "return-receivable") {
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
+    }
   }
 
-  function escapeHtml(str) {
-    return String(str || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  /***********************
+   * FORM (ADD / EDIT)
+   ***********************/
+  function setupFormButtons() {
+    formButtons.innerHTML = `<button class="btn btn-success" id="addTxBtn">+ Add Entry</button>`;
+    document.getElementById("addTxBtn").addEventListener("click", handleAddEdit);
   }
 
-  // Filters events
+  function clearTxForm() {
+    const today = new Date().toISOString().substring(0, 10);
+    txDate.value = today;
+    txUnit.value = "";
+    txType.value = "income";
+    txHeader.value = "";
+    txShortCode.value = "";
+    txCategory.value = "";
+    txDesc.value = "";
+    txAmount.value = "";
+    txRemarks.value = "";
+    editingIndex = null;
+  }
+
+  function enterEditMode(idx) {
+    editingIndex = idx;
+    const t = transactions[idx];
+    txDate.value = t.date || "";
+    txUnit.value = t.unit || "";
+    txType.value = t.type || "income";
+    txHeader.value = t.header || "";
+    txShortCode.value = t.shortCode || "";
+    txCategory.value = t.category || "";
+    txDesc.value = t.description || "";
+    txAmount.value = n3(t.amount);
+    txRemarks.value = t.remarks || "";
+
+    formButtons.innerHTML = `
+      <button class="btn btn-success" id="saveEditBtn">Save Changes</button>
+      <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+    `;
+    document.getElementById("saveEditBtn").addEventListener("click", handleAddEdit);
+    document.getElementById("cancelEditBtn").addEventListener("click", cancelEdit);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    editingIndex = null;
+    clearTxForm();
+    setupFormButtons();
+  }
+
+  async function persistAllAfterLocalChange() {
+    // Save local cache
+    saveToLocalCache();
+    // Save cloud state
+    try {
+      await cloudSaveState();
+      showStatus("✓ Saved to Cloud", "ok");
+    } catch (e) {
+      console.error(e);
+      showStatus("⚠ Cloud save failed (check rules/internet). Local cache saved.", "warn");
+    }
+  }
+
+  async function handleAddEdit() {
+    const date = txDate.value;
+    const unit = txUnit.value.trim();
+    const type = txType.value;
+    const header = txHeader.value.trim() || "Other";
+    const shortCode = txShortCode.value.trim();
+    const category = txCategory.value.trim();
+    const description = txDesc.value.trim();
+    const amount = parseFloat(txAmount.value);
+    const remarks = txRemarks.value.trim();
+
+    if (!date || isNaN(amount) || amount <= 0) {
+      alert("Please enter date and a positive amount.");
+      return;
+    }
+
+    ensureItemExists(header);
+    if (category) categorySet.add(category);
+
+    if (editingIndex !== null) {
+      const old = transactions[editingIndex];
+      const oldHeader = old.header || "Other";
+      const oldAmount = n3(old.amount);
+      ensureItemExists(oldHeader);
+
+      // reverse old local effect
+      reverseTransactionEffect(oldHeader, old.type, oldAmount);
+
+      // update local object
+      const newTx = {
+        id: old.id,
+        _docId: old._docId || null,
+        date, unit, type, header, shortCode, category, description, amount, remarks
+      };
+      transactions[editingIndex] = newTx;
+
+      // apply new local effect
+      applyTransactionEffect(header, type, amount);
+
+      // cloud write tx
+      try {
+        await cloudUpsertTransaction(newTx);
+      } catch (e) {
+        console.error(e);
+        showStatus("⚠ Transaction save failed to cloud. Local saved.", "warn");
+      }
+    } else {
+      const tx = {
+        id: transactions.length ? Math.max(...transactions.map(x => Number(x.id||0))) + 1 : 1,
+        _docId: null,
+        date, unit, type, header, shortCode, category, description, amount, remarks
+      };
+      transactions.push(tx);
+
+      // apply local
+      applyTransactionEffect(header, type, amount);
+
+      // cloud create tx
+      try {
+        await cloudUpsertTransaction(tx);
+      } catch (e) {
+        console.error(e);
+        showStatus("⚠ Transaction save failed to cloud. Local saved.", "warn");
+      }
+    }
+
+    rebuildCategorySetFromTransactions();
+    updateCategoryDatalist();
+    renderOpeningTable();
+    refreshFiltersUI();
+    renderTransactionTable();
+    updateTotals();
+    updateDashboardTotals();
+
+    await persistAllAfterLocalChange();
+
+    clearTxForm();
+    setupFormButtons();
+  }
+
+  /***********************
+   * DELETE ENTRY
+   ***********************/
+  async function deleteEntry(idx) {
+    const t = transactions[idx];
+    if (!t) return;
+
+    const msg = `Delete entry?\n\n${t.date} | ${t.unit} | ${typeLabel(t.type)} | ${t.header} | ${n3(t.amount).toFixed(3)} KD`;
+    if (!confirm(msg)) return;
+
+    // reverse local effect
+    reverseTransactionEffect(t.header || "Other", t.type, n3(t.amount));
+
+    // cloud delete
+    try {
+      await cloudDeleteTransaction(t._docId);
+    } catch (e) {
+      console.error(e);
+      showStatus("⚠ Cloud delete failed. Local removed.", "warn");
+    }
+
+    // remove local
+    transactions.splice(idx, 1);
+
+    rebuildCategorySetFromTransactions();
+    updateCategoryDatalist();
+    renderOpeningTable();
+    refreshFiltersUI();
+    renderTransactionTable();
+    updateTotals();
+    updateDashboardTotals();
+
+    await persistAllAfterLocalChange();
+    showStatus("✓ Entry deleted", "ok");
+  }
+
+  /***********************
+   * SEARCH + UNIT FILTER EVENTS
+   ***********************/
   txSearch.addEventListener("input", () => renderTransactionTable());
   unitFilter.addEventListener("change", () => renderTransactionTable());
   clearFiltersBtn.addEventListener("click", () => {
@@ -1139,7 +1397,9 @@
     renderTransactionTable();
   });
 
-  // Report preset logic
+  /***********************
+   * REPORT PRESET LOGIC
+   ***********************/
   function applyReportPreset() {
     const preset = repPreset.value;
     if (preset === "total") {
@@ -1150,13 +1410,11 @@
       repTypeSel.value = "__all__";
     } else if (preset === "receivable") {
       repItem.value = "__all__";
-      repTypeSel.value = "receivable"; // show loan given by default
-      // user can change to "All Types" to include returns too
+      repTypeSel.value = "receivable";
     }
   }
   repPreset.addEventListener("change", applyReportPreset);
 
-  // Report generate
   repBtn.addEventListener("click", function () {
     const from = repFrom.value;
     const to = repTo.value;
@@ -1236,15 +1494,15 @@
       const sign = (t.type === "expense" || t.type === "receivable") ? "-" : "";
       tr.innerHTML = `
         <td>${idx+1}</td>
-        <td>${t.date || ""}</td>
-        <td>${t.unit || ""}</td>
-        <td>${typeLabel(t.type)}</td>
-        <td>${t.header || ""}</td>
-        <td>${t.shortCode || ""}</td>
-        <td>${t.category || ""}</td>
-        <td>${t.description || ""}</td>
+        <td>${escapeHtml(t.date || "")}</td>
+        <td>${escapeHtml(t.unit || "")}</td>
+        <td>${escapeHtml(typeLabel(t.type))}</td>
+        <td>${escapeHtml(t.header || "")}</td>
+        <td>${escapeHtml(t.shortCode || "")}</td>
+        <td>${escapeHtml(t.category || "")}</td>
+        <td>${escapeHtml(t.description || "")}</td>
         <td class="text-right">${sign}${n3(t.amount).toFixed(3)}</td>
-        <td>${t.remarks || ""}</td>
+        <td>${escapeHtml(t.remarks || "")}</td>
       `;
       reportTableBody.appendChild(tr);
     });
@@ -1256,7 +1514,7 @@
       const v = itemMap[item];
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${item}</td>
+        <td>${escapeHtml(item)}</td>
         <td class="text-right">${n3(v.income).toFixed(3)}</td>
         <td class="text-right">${n3(v.expense).toFixed(3)}</td>
         <td class="text-right">${n3(v.recvNet).toFixed(3)}</td>
@@ -1276,7 +1534,9 @@
     renderCategoryPie(catMap);
 
     lastReport = { from, to, filters, filtered, summary: { income, expense, receivableNet, net }, itemMap, catMap };
-    saveToStorage();
+    saveToLocalCache();
+    // save last report to cloud (optional)
+    setDoc(DOC_LAST_REPORT, lastReport, { merge:true }).catch(()=>{});
   }
 
   function renderCategoryPie(catMap) {
@@ -1292,7 +1552,7 @@
       pieChartInstance = null;
     }
 
-    pieChartInstance = new Chart(canvas, {
+    pieChartInstance = new window.Chart(canvas, {
       type: "pie",
       data: {
         labels: allZero ? ["No Data"] : labels,
@@ -1365,15 +1625,16 @@
     doc.save(`IIC_Finance_Report_${lastReport.from}_to_${lastReport.to}.pdf`);
   });
 
-  /* BACKUP & RESTORE */
+  /***********************
+   * BACKUP & RESTORE
+   ***********************/
   function makeBackupObject() {
     return {
-      version: 1,
+      version: 2,
       createdAt: new Date().toISOString(),
-      keys: { LS_OPENING, LS_TX, LS_CATEGORIES },
       data: {
         openingBalances,
-        transactions,
+        transactions: transactions.map(stripInternal), // remove firestore ids for portability
         categories: Array.from(categorySet)
       }
     };
@@ -1401,29 +1662,6 @@
     return null;
   }
 
-  function applyBackupObject(obj) {
-    const err = validateBackupObject(obj);
-    if (err) { alert(err); return false; }
-
-    openingBalances = obj.data.openingBalances;
-    transactions = obj.data.transactions;
-    categorySet = new Set(obj.data.categories);
-
-    localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
-    localStorage.setItem(LS_TX, JSON.stringify(transactions));
-    localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
-
-    renderOpeningTable();
-    refreshFiltersUI();
-    renderTransactionTable();
-    updateTotals();
-    updateCategoryDatalist();
-    updateDashboardTotals();
-
-    showStatus("✓ Restore completed");
-    return true;
-  }
-
   function backupToText(obj) {
     const json = JSON.stringify(obj);
     const utf8 = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16)));
@@ -1437,11 +1675,32 @@
     return JSON.parse(json);
   }
 
+  function applyBackupObject(obj) {
+    const err = validateBackupObject(obj);
+    if (err) { alert(err); return false; }
+
+    openingBalances = obj.data.openingBalances;
+    transactions = obj.data.transactions.map(t => ({ ...t, _docId: null })); // new docs in cloud later
+    categorySet = new Set(obj.data.categories);
+
+    saveToLocalCache();
+
+    renderOpeningTable();
+    refreshFiltersUI();
+    renderTransactionTable();
+    updateTotals();
+    updateCategoryDatalist();
+    updateDashboardTotals();
+
+    showStatus("✓ Restore completed (local)", "ok");
+    return true;
+  }
+
   backupBtn.addEventListener("click", () => {
     const obj = makeBackupObject();
     const filename = `IIC_Finance_Backup_${new Date().toISOString().slice(0,10)}.json`;
     downloadJSON(filename, obj);
-    showStatus("✓ Backup downloaded");
+    showStatus("✓ Backup downloaded", "ok");
   });
 
   restoreBtn.addEventListener("click", () => { restoreFile.click(); });
@@ -1475,7 +1734,7 @@
     backupText.focus();
     backupText.select();
     try { document.execCommand("copy"); } catch {}
-    showStatus("✓ Backup copied");
+    showStatus("✓ Backup copied", "ok");
   });
 
   pasteRestoreBtn.addEventListener("click", () => {
@@ -1501,13 +1760,81 @@
     restoreTextWrap.classList.add("hidden");
   });
 
-  /* START */
-  setupFormButtons();
+  /***********************
+   * CLOUD BUTTONS
+   ***********************/
+  cloudPullBtn.addEventListener("click", async () => {
+    if (!confirm("Reload from Cloud and replace current view? (Local cache will be overwritten)")) return;
+    try {
+      const cloud = await cloudLoad();
+      if (cloud.cloudTx && (cloud.cloudTx.length > 0 || cloud.cloudHasState)) {
+        transactions = cloud.cloudTx || [];
+        rebuildCategorySetFromTransactions();
+        updateCategoryDatalist();
+        saveToLocalCache();
+        renderOpeningTable();
+        refreshFiltersUI();
+        renderTransactionTable();
+        updateTotals();
+        updateDashboardTotals();
+        showStatus("✓ Loaded from Cloud", "ok");
+      } else {
+        showStatus("ℹ Cloud is empty", "warn");
+      }
+    } catch (e) {
+      console.error(e);
+      showStatus("⚠ Cloud pull failed", "warn");
+    }
+  });
 
-  // keep report filters in sync when items/units change
-  function syncReportDropdownsSoon() {
-    setTimeout(() => refreshFiltersUI(), 0);
+  cloudPushBtn.addEventListener("click", async () => {
+    if (!confirm("Upload LOCAL data to Cloud? This will REPLACE cloud data.")) return;
+    try {
+      await cloudPushAllLocalToCloud(true);
+      showStatus("✓ Local uploaded to Cloud", "ok");
+    } catch (e) {
+      console.error(e);
+      showStatus("⚠ Cloud push failed", "warn");
+    }
+  });
+
+  /***********************
+   * STARTUP
+   ***********************/
+  function applyReportPresetStartup() {
+    applyReportPreset();
   }
+
+  async function initPage() {
+    setTodayDefault();
+    setupFormButtons();
+
+    await initialSyncStrategy();  // loads local, then cloud, then decides
+
+    rebuildCategorySetFromTransactions();
+    updateCategoryDatalist();
+    renderOpeningTable();
+    refreshFiltersUI();
+    renderTransactionTable();
+    updateTotals();
+    updateDashboardTotals();
+    applyReportPresetStartup();
+  }
+
+  // Login
+  loginBtn.addEventListener("click", async () => {
+    const u = loginUser.value.trim();
+    const p = loginPass.value;
+    if (u === VALID_USER && p === VALID_PASS) {
+      loginMsg.textContent = "";
+      loginCard.style.display = "none";
+      appDiv.style.display = "block";
+      await initPage();
+    } else {
+      loginMsg.textContent = "Unauthorized login. Access denied.";
+    }
+  });
+
 </script>
 </body>
 </html>
