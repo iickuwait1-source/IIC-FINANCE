@@ -1206,6 +1206,18 @@
       openingBalances[header].current = n3(openingBalances[header].current) - amt;
     }
   }
+function reverseTransactionEffect(header, type, amount) {
+  ...
+}
+
+function cleanUnusedItems() {
+  const used = new Set();
+  transactions.forEach(t => { if (t.header) used.add(t.header); });
+
+  Object.keys(openingBalances).forEach(k => {
+    if (!used.has(k)) delete openingBalances[k];
+  });
+}
 
   /***********************
    * FORM (ADD / EDIT)
