@@ -47,10 +47,7 @@
       color: #111827;
     }
 
-    .container {
-      max-width: 1100px;
-      margin: 0 auto 40px auto;
-    }
+    .container { max-width: 1100px; margin: 0 auto 40px auto; }
 
     .card {
       background: var(--bg-card);
@@ -128,49 +125,25 @@
       margin-right: 6px;
     }
 
-    .btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-    }
+    .btn:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18); }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-    }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+    .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
 
-    .btn-success {
-      background: linear-gradient(135deg, #16a34a, #15803d);
-    }
-    .btn-success:hover {
-      background: linear-gradient(135deg, #15803d, #166534);
-    }
+    .btn-success { background: linear-gradient(135deg, #16a34a, #15803d); }
+    .btn-success:hover { background: linear-gradient(135deg, #15803d, #166534); }
 
-    .btn-secondary {
-      background: linear-gradient(135deg, #64748b, #475569);
-    }
-    .btn-secondary:hover {
-      background: linear-gradient(135deg, #475569, #334155);
-    }
+    .btn-secondary { background: linear-gradient(135deg, #64748b, #475569); }
+    .btn-secondary:hover { background: linear-gradient(135deg, #475569, #334155); }
 
-    .btn-warning {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-    }
-    .btn-warning:hover {
-      background: linear-gradient(135deg, #d97706, #b45309);
-    }
+    .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .btn-warning:hover { background: linear-gradient(135deg, #d97706, #b45309); }
 
-    .flex-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+    .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+    .btn-danger:hover { background: linear-gradient(135deg, #b91c1c, #991b1b); }
 
-    .flex-item {
-      flex: 1 1 160px;
-      min-width: 130px;
-    }
+    .flex-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .flex-item { flex: 1 1 160px; min-width: 130px; }
 
     .text-right { text-align: right; }
     .small { font-size: 12px; color: var(--text-muted); }
@@ -188,14 +161,9 @@
 
     .mt-5 { margin-top: 5px; }
     .mt-10 { margin-top: 10px; }
-
     .hidden { display: none; }
 
-    .error-msg {
-      color: var(--danger);
-      font-size: 13px;
-      margin-top: 4px;
-    }
+    .error-msg { color: var(--danger); font-size: 13px; margin-top: 4px; }
 
     .pill {
       display: inline-flex;
@@ -212,6 +180,10 @@
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
     }
+
+    .dashboard-5 { grid-template-columns: repeat(5, minmax(150px, 1fr)); }
+    @media (max-width: 1000px) { .dashboard-5 { grid-template-columns: repeat(2, minmax(150px, 1fr)); } }
+    @media (max-width: 520px) { .dashboard-5 { grid-template-columns: 1fr; } }
 
     .metric-card {
       padding: 10px;
@@ -234,19 +206,9 @@
       color: #111827;
     }
 
-    .chart-container {
-      position: relative;
-      width: 100%;
-      max-width: 100%;
-      height: 260px;
-      margin-top: 10px;
-    }
+    .chart-container { position: relative; width: 100%; height: 260px; margin-top: 10px; }
 
-    .btn-group {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
+    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
 
     .status-bar {
       background: #f0f9ff;
@@ -267,13 +229,13 @@
       .btn { width: 100%; text-align: center; margin-bottom: 4px; }
       .chart-container { height: 220px; }
     }
-
     @media (max-width: 480px) {
       .flex-row { flex-direction: column; }
       .flex-item { min-width: 100%; }
     }
   </style>
 </head>
+
 <body>
 <div class="container">
 
@@ -295,9 +257,7 @@
       </div>
     </div>
     <div id="loginMsg" class="error-msg"></div>
-    <div class="small mt-5">
-      <strong>Auto-save:</strong> All data saved automatically to browser. No manual save needed.
-    </div>
+    <div class="small mt-5"><strong>Auto-save:</strong> All data saved automatically to browser localStorage.</div>
   </div>
 
   <!-- App -->
@@ -308,27 +268,67 @@
       <strong>✓ Auto-saved</strong> - Data stored in browser localStorage
     </div>
 
+    <!-- Backup / Restore -->
+    <div class="card" style="margin-top:10px;">
+      <h2 style="margin-bottom:8px;">Backup & Restore</h2>
+      <div class="small" style="margin-bottom:10px;">
+        Backup downloads a file (Opening + Transactions + Categories). Restore loads it back into this browser.
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="backupBtn">Backup (Download)</button>
+        <button class="btn btn-warning" id="restoreBtn">Restore (Upload)</button>
+        <button class="btn btn-primary" id="copyBackupBtn">Copy Backup (Text)</button>
+        <button class="btn btn-warning" id="pasteRestoreBtn">Paste Restore (Text)</button>
+      </div>
+
+      <input type="file" id="restoreFile" accept=".json,application/json" style="display:none;" />
+
+      <div id="backupTextWrap" class="mt-10 hidden">
+        <label for="backupText">Backup Text (copied automatically)</label>
+        <input id="backupText" readonly />
+      </div>
+
+      <div id="restoreTextWrap" class="mt-10 hidden">
+        <label for="restoreText">Paste Backup Text here</label>
+        <input id="restoreText" placeholder="Paste backup text..." />
+        <div class="mt-10">
+          <button class="btn btn-success" id="applyRestoreTextBtn">Apply Restore</button>
+          <button class="btn btn-secondary" id="cancelRestoreTextBtn">Cancel</button>
+        </div>
+        <div class="small mt-5">Tip: Use this if upload is blocked on your device.</div>
+      </div>
+    </div>
+
     <!-- Dashboard -->
     <div class="card">
       <h2>Dashboard</h2>
-      <div class="dashboard-grid mt-10">
-        <div class="metric-card">
-          <div class="metric-label">Total Opening</div>
-          <div class="metric-value" id="dashOpening">0.000 KD</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Total Current</div>
-          <div class="metric-value" id="dashCurrent">0.000 KD</div>
-        </div>
+
+      <div class="dashboard-grid dashboard-5 mt-10">
         <div class="metric-card">
           <div class="metric-label">Total Income</div>
           <div class="metric-value" id="dashIncome">0.000 KD</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">Total Receivable</div>
-          <div class="metric-value" id="dashReceivable">0.000 KD</div>
+          <div class="metric-label">Total Expense</div>
+          <div class="metric-value" id="dashExpense">0.000 KD</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Balance</div>
+          <div class="metric-value" id="dashBalance">0.000 KD</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Receivable (Net)</div>
+          <div class="metric-value" id="dashReceivableNet">0.000 KD</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Zakat (Net)</div>
+          <div class="metric-value" id="dashZakatNet">0.000 KD</div>
         </div>
       </div>
+
+      <h3 class="mt-10">Item Totals (Current Balance)</h3>
+      <div class="dashboard-grid dashboard-5 mt-10" id="dashItemsGrid"></div>
     </div>
 
     <!-- Opening balances -->
@@ -420,6 +420,26 @@
     <!-- All entries -->
     <div class="card">
       <h2>All Entries</h2>
+
+      <!-- Search + Unit Filter -->
+      <div class="flex-row mt-10">
+        <div class="flex-item">
+          <label for="txSearch">Search</label>
+          <input id="txSearch" type="text" placeholder="Search unit, header, category, description, remarks...">
+        </div>
+        <div class="flex-item">
+          <label for="unitFilter">Unit Filter</label>
+          <select id="unitFilter">
+            <option value="__all__">All Units</option>
+          </select>
+        </div>
+        <div class="flex-item" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-secondary" id="clearFiltersBtn">Clear</button>
+        </div>
+      </div>
+
+      <div class="small" id="txFilterMeta"></div>
+
       <table id="txTable">
         <thead>
         <tr>
@@ -448,10 +468,48 @@
       </table>
     </div>
 
-    <!-- Report (same as before) -->
+    <!-- Report -->
     <div class="card">
       <h2>Report</h2>
+
+      <!-- Preset + Filters -->
       <div class="flex-row mt-10">
+        <div class="flex-item">
+          <label for="repPreset">Report Type</label>
+          <select id="repPreset">
+            <option value="total">Total Report</option>
+            <option value="zakat">Zakat Report</option>
+            <option value="receivable">Receivable Report</option>
+          </select>
+        </div>
+
+        <div class="flex-item">
+          <label for="repItem">Item (Header)</label>
+          <select id="repItem">
+            <option value="__all__">All Items</option>
+          </select>
+        </div>
+
+        <div class="flex-item">
+          <label for="repUnitSel">Unit</label>
+          <select id="repUnitSel">
+            <option value="__all__">All Units</option>
+          </select>
+        </div>
+
+        <div class="flex-item">
+          <label for="repTypeSel">Type</label>
+          <select id="repTypeSel">
+            <option value="__all__">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+            <option value="receivable">Receivable</option>
+            <option value="return-receivable">Return Receivable</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex-row">
         <div class="flex-item">
           <label for="repFrom">From date</label>
           <input type="date" id="repFrom">
@@ -506,7 +564,7 @@
             <th>Item</th>
             <th class="text-right">Income (KD)</th>
             <th class="text-right">Expense (KD)</th>
-            <th class="text-right">Receivable (KD)</th>
+            <th class="text-right">Receivable Net (KD)</th>
             <th class="text-right">Net (KD)</th>
           </tr>
           </thead>
@@ -538,6 +596,7 @@
   const VALID_USER = "sahad";
   const VALID_PASS = "sa&4Er6A@Q";
 
+  /* IMPORTANT: keep keys same to NOT lose existing data */
   const LS_OPENING = "iic_fin_opening";
   const LS_TX = "iic_fin_transactions";
   const LS_LAST_REPORT = "iic_fin_last_report";
@@ -553,6 +612,7 @@
   let editingIndex = null;
 
   let pieChartInstance = null;
+  let lastReport = null;
 
   // DOM elements
   const loginUser = document.getElementById("loginUser");
@@ -577,16 +637,26 @@
   const txDesc = document.getElementById("txDesc");
   const txAmount = document.getElementById("txAmount");
   const txRemarks = document.getElementById("txRemarks");
-  const addTxBtn = document.getElementById("addTxBtn");
   const formButtons = document.getElementById("formButtons");
+
+  const txSearch = document.getElementById("txSearch");
+  const unitFilter = document.getElementById("unitFilter");
+  const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+  const txFilterMeta = document.getElementById("txFilterMeta");
 
   const txTableBody = document.querySelector("#txTable tbody");
   const footerTotalBalance = document.getElementById("footerTotalBalance");
+
+  const repPreset = document.getElementById("repPreset");
+  const repItem = document.getElementById("repItem");
+  const repUnitSel = document.getElementById("repUnitSel");
+  const repTypeSel = document.getElementById("repTypeSel");
 
   const repFrom = document.getElementById("repFrom");
   const repTo = document.getElementById("repTo");
   const repBtn = document.getElementById("repBtn");
   const pdfBtn = document.getElementById("pdfBtn");
+
   const reportArea = document.getElementById("reportArea");
   const reportTableBody = document.querySelector("#reportTable tbody");
   const reportNetCell = document.getElementById("reportNet");
@@ -596,17 +666,60 @@
   const reportTopCategory = document.getElementById("reportTopCategory");
   const reportCategoryCount = document.getElementById("reportCategoryCount");
 
-  const dashOpening = document.getElementById("dashOpening");
-  const dashCurrent = document.getElementById("dashCurrent");
+  // Dashboard
   const dashIncome = document.getElementById("dashIncome");
-  const dashReceivable = document.getElementById("dashReceivable");
+  const dashExpense = document.getElementById("dashExpense");
+  const dashBalance = document.getElementById("dashBalance");
+  const dashReceivableNet = document.getElementById("dashReceivableNet");
+  const dashZakatNet = document.getElementById("dashZakatNet");
+  const dashItemsGrid = document.getElementById("dashItemsGrid");
+
+  // Backup/Restore DOM
+  const backupBtn = document.getElementById("backupBtn");
+  const restoreBtn = document.getElementById("restoreBtn");
+  const restoreFile = document.getElementById("restoreFile");
+
+  const copyBackupBtn = document.getElementById("copyBackupBtn");
+  const pasteRestoreBtn = document.getElementById("pasteRestoreBtn");
+  const backupTextWrap = document.getElementById("backupTextWrap");
+  const backupText = document.getElementById("backupText");
+
+  const restoreTextWrap = document.getElementById("restoreTextWrap");
+  const restoreText = document.getElementById("restoreText");
+  const applyRestoreTextBtn = document.getElementById("applyRestoreTextBtn");
+  const cancelRestoreTextBtn = document.getElementById("cancelRestoreTextBtn");
 
   function showStatus(msg) {
     statusBar.textContent = msg;
     statusBar.style.display = "block";
-    setTimeout(() => {
-      statusBar.style.display = "none";
-    }, 3000);
+    setTimeout(() => { statusBar.style.display = "none"; }, 2500);
+  }
+
+  function n3(x) {
+    const v = Number(x || 0);
+    if (!Number.isFinite(v)) return 0;
+    return v;
+  }
+
+  function fmtKD(x) { return n3(x).toFixed(3) + " KD"; }
+
+  function typeLabel(type) {
+    const t = (type || "").toLowerCase();
+    if (t === "income") return "Income";
+    if (t === "expense") return "Expense";
+    if (t === "receivable") return "Receivable";
+    if (t === "return-receivable") return "Return Receivable";
+    return type || "";
+  }
+
+  // Net effect for reporting:
+  function netEffect(t) {
+    const amt = n3(t.amount);
+    if (t.type === "income") return +amt;
+    if (t.type === "expense") return -amt;
+    if (t.type === "receivable") return -amt;
+    if (t.type === "return-receivable") return +amt;
+    return 0;
   }
 
   function loadFromStorage() {
@@ -614,12 +727,13 @@
       const ob = localStorage.getItem(LS_OPENING);
       const tx = localStorage.getItem(LS_TX);
       const cat = localStorage.getItem(LS_CATEGORIES);
+      const lr = localStorage.getItem(LS_LAST_REPORT);
+
       if (ob) openingBalances = JSON.parse(ob);
       if (tx) transactions = JSON.parse(tx);
       if (cat) categorySet = new Set(JSON.parse(cat));
-    } catch (e) {
-      console.error("Storage load error", e);
-    }
+      if (lr) lastReport = JSON.parse(lr);
+    } catch (e) { console.error("Storage load error", e); }
   }
 
   function saveToStorage() {
@@ -627,6 +741,7 @@
       localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
       localStorage.setItem(LS_TX, JSON.stringify(transactions));
       localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
+      if (lastReport) localStorage.setItem(LS_LAST_REPORT, JSON.stringify(lastReport));
       showStatus("✓ Auto-saved to browser");
     } catch (e) {
       console.error("Storage save error", e);
@@ -642,6 +757,10 @@
       opt.value = cat;
       categoryList.appendChild(opt);
     });
+  }
+
+  function ensureItemExists(header) {
+    if (!openingBalances[header]) openingBalances[header] = { opening: 0, current: 0 };
   }
 
   // Login
@@ -660,13 +779,15 @@
 
   function initPage() {
     loadFromStorage();
-    renderOpeningTable();
-    renderTransactionTable();
-    updateTotals();
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+    renderOpeningTable();
+    refreshFiltersUI();       // build unit/item dropdowns
+    renderTransactionTable(); // uses filters
+    updateTotals();
     updateDashboardTotals();
     setTodayDefault();
+    applyReportPreset();      // set report defaults
   }
 
   function setTodayDefault() {
@@ -686,44 +807,36 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${key}</td>
-        <td class="text-right">${Number(rowData.opening || 0).toFixed(3)}</td>
-        <td class="text-right">${Number(rowData.current || 0).toFixed(3)}</td>
+        <td class="text-right">${n3(rowData.opening).toFixed(3)}</td>
+        <td class="text-right">${n3(rowData.current).toFixed(3)}</td>
       `;
       openingTableBody.appendChild(tr);
-      totalOpening += Number(rowData.opening || 0);
-      totalCurrent += Number(rowData.current || 0);
+      totalOpening += n3(rowData.opening);
+      totalCurrent += n3(rowData.current);
     });
 
     totalOpeningCell.textContent = totalOpening.toFixed(3);
     totalCurrentCell.textContent = totalCurrent.toFixed(3);
   }
 
-  function ensureItemExists(header) {
-    if (!openingBalances[header]) {
-      openingBalances[header] = { opening: 0, current: 0 };
-    }
-  }
-
   // Add/Edit/Cancel handlers
   function setupFormButtons() {
-    formButtons.innerHTML = `
-      <button class="btn btn-success" id="addTxBtn">+ Add Entry</button>
-    `;
+    formButtons.innerHTML = `<button class="btn btn-success" id="addTxBtn">+ Add Entry</button>`;
     document.getElementById("addTxBtn").addEventListener("click", handleAddEdit);
   }
 
   function enterEditMode(idx) {
     editingIndex = idx;
     const t = transactions[idx];
-    txDate.value = t.date;
-    txUnit.value = t.unit;
-    txType.value = t.type;
-    txHeader.value = t.header;
-    txShortCode.value = t.shortCode;
+    txDate.value = t.date || "";
+    txUnit.value = t.unit || "";
+    txType.value = t.type || "income";
+    txHeader.value = t.header || "";
+    txShortCode.value = t.shortCode || "";
     txCategory.value = t.category || "";
-    txDesc.value = t.description;
-    txAmount.value = t.amount;
-    txRemarks.value = t.remarks;
+    txDesc.value = t.description || "";
+    txAmount.value = n3(t.amount);
+    txRemarks.value = t.remarks || "";
 
     formButtons.innerHTML = `
       <button class="btn btn-success" id="saveEditBtn">Save Changes</button>
@@ -733,6 +846,7 @@
     document.getElementById("cancelEditBtn").addEventListener("click", cancelEdit);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  window.enterEditMode = enterEditMode;
 
   function cancelEdit() {
     editingIndex = null;
@@ -757,44 +871,31 @@
     }
 
     ensureItemExists(header);
-    if (category) {
-      categorySet.add(category);
-      updateCategoryDatalist();
-    }
+    if (category) categorySet.add(category);
 
     if (editingIndex !== null) {
-      // Edit existing
       const old = transactions[editingIndex];
-      const oldHeader = old.header;
-      const oldAmount = Number(old.amount);
+      const oldHeader = old.header || "Other";
+      const oldAmount = n3(old.amount);
       ensureItemExists(oldHeader);
 
-      // Reverse old effect
-      if (old.type === "income") {
-        openingBalances[oldHeader].opening -= oldAmount;
-        openingBalances[oldHeader].current -= oldAmount;
-      } else if (old.type === "expense") {
-        openingBalances[oldHeader].current += oldAmount;
-      } else if (old.type === "receivable") {
-        openingBalances[oldHeader].current += oldAmount; // receivable deducts
-      } else if (old.type === "return-receivable") {
-        openingBalances[oldHeader].current -= oldAmount; // return adds
-      }
+      reverseTransactionEffect(oldHeader, old.type, oldAmount);
 
-      // Apply new
       const newTx = { id: old.id, date, unit, type, header, shortCode, category, description, amount, remarks };
       transactions[editingIndex] = newTx;
 
       applyTransactionEffect(header, type, amount);
     } else {
-      // Add new
       const tx = { id: transactions.length + 1, date, unit, type, header, shortCode, category, description, amount, remarks };
       transactions.push(tx);
       applyTransactionEffect(header, type, amount);
     }
 
     saveToStorage();
+    rebuildCategorySetFromTransactions();
+    updateCategoryDatalist();
     renderOpeningTable();
+    refreshFiltersUI();
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
@@ -804,15 +905,31 @@
 
   function applyTransactionEffect(header, type, amount) {
     ensureItemExists(header);
+    const amt = n3(amount);
     if (type === "income") {
-      openingBalances[header].opening += amount;
-      openingBalances[header].current += amount;
+      openingBalances[header].opening = n3(openingBalances[header].opening) + amt;
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
     } else if (type === "expense") {
-      openingBalances[header].current -= amount;
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
     } else if (type === "receivable") {
-      openingBalances[header].current -= amount; // Loan given: deduct
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
     } else if (type === "return-receivable") {
-      openingBalances[header].current += amount; // Loan returned: add
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    }
+  }
+
+  function reverseTransactionEffect(header, type, amount) {
+    ensureItemExists(header);
+    const amt = n3(amount);
+    if (type === "income") {
+      openingBalances[header].opening = n3(openingBalances[header].opening) - amt;
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
+    } else if (type === "expense") {
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    } else if (type === "receivable") {
+      openingBalances[header].current = n3(openingBalances[header].current) + amt;
+    } else if (type === "return-receivable") {
+      openingBalances[header].current = n3(openingBalances[header].current) - amt;
     }
   }
 
@@ -830,24 +947,88 @@
     editingIndex = null;
   }
 
+  // DELETE ENTRY
+  function deleteEntry(idx) {
+    const t = transactions[idx];
+    if (!t) return;
+
+    const msg = `Delete entry?\n\n${t.date} | ${t.unit} | ${typeLabel(t.type)} | ${t.header} | ${n3(t.amount).toFixed(3)} KD`;
+    if (!confirm(msg)) return;
+
+    // reverse its effect first
+    reverseTransactionEffect(t.header || "Other", t.type, n3(t.amount));
+
+    // remove
+    transactions.splice(idx, 1);
+
+    saveToStorage();
+    rebuildCategorySetFromTransactions();
+    updateCategoryDatalist();
+    renderOpeningTable();
+    refreshFiltersUI();
+    renderTransactionTable();
+    updateTotals();
+    updateDashboardTotals();
+
+    showStatus("✓ Entry deleted");
+  }
+  window.deleteEntry = deleteEntry;
+
+  // SEARCH + UNIT FILTER
+  function normalize(s) { return String(s || "").toLowerCase(); }
+
+  function getFilteredView() {
+    const q = normalize(txSearch.value).trim();
+    const u = unitFilter.value;
+
+    const out = [];
+    transactions.forEach((t, idx) => {
+      if (u !== "__all__" && String(t.unit || "") !== u) return;
+
+      if (q) {
+        const hay = [
+          t.date, t.unit, t.type, t.header, t.shortCode, t.category,
+          t.description, t.remarks
+        ].map(normalize).join(" ");
+        if (!hay.includes(q)) return;
+      }
+
+      out.push({ idx, t });
+    });
+    return out;
+  }
+
   function renderTransactionTable() {
     txTableBody.innerHTML = "";
-    transactions.forEach((t, index) => {
+    const view = getFilteredView();
+
+    txFilterMeta.textContent = `Showing ${view.length} of ${transactions.length} entries`;
+
+    view.forEach((row, displayIndex) => {
+      const { idx, t } = row;
+
       const tr = document.createElement("tr");
-      const sign = t.type === "expense" || t.type === "receivable" ? "-" : "";
-      
+      const sign = (t.type === "expense" || t.type === "receivable") ? "-" : "";
+      const badgeClass =
+        t.type === "income" ? "badge-income" :
+        t.type === "expense" ? "badge-expense" :
+        "badge-receivable";
+
       tr.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${t.date}</td>
-        <td>${t.unit}</td>
-        <td><span class="badge ${t.type === 'income' ? 'badge-income' : t.type === 'expense' ? 'badge-expense' : 'badge-receivable'}">${t.type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span></td>
-        <td>${t.header}</td>
-        <td>${t.shortCode}</td>
+        <td>${displayIndex + 1}</td>
+        <td>${t.date || ""}</td>
+        <td>${t.unit || ""}</td>
+        <td><span class="badge ${badgeClass}">${typeLabel(t.type)}</span></td>
+        <td>${t.header || ""}</td>
+        <td>${t.shortCode || ""}</td>
         <td>${t.category || ""}</td>
-        <td>${t.description}</td>
-        <td class="text-right">${sign}${Number(t.amount).toFixed(3)}</td>
-        <td>${t.remarks}</td>
-        <td><button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;" onclick="enterEditMode(${index})">Edit</button></td>
+        <td>${t.description || ""}</td>
+        <td class="text-right">${sign}${n3(t.amount).toFixed(3)}</td>
+        <td>${t.remarks || ""}</td>
+        <td>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:6px;" onclick="enterEditMode(${idx})">Edit</button>
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteEntry(${idx})">Delete</button>
+        </td>
       `;
       txTableBody.appendChild(tr);
     });
@@ -855,41 +1036,127 @@
 
   function updateTotals() {
     let totalCurrent = 0;
-    Object.keys(openingBalances).forEach(key => {
-      totalCurrent += Number(openingBalances[key].current || 0);
-    });
+    Object.keys(openingBalances).forEach(key => { totalCurrent += n3(openingBalances[key].current); });
     footerTotalBalance.textContent = totalCurrent.toFixed(3);
   }
 
   function rebuildCategorySetFromTransactions() {
-    transactions.forEach(t => {
-      if (t.category) categorySet.add(t.category);
-    });
+    categorySet = new Set();
+    transactions.forEach(t => { if (t.category) categorySet.add(t.category); });
   }
 
+  // Dashboard: 5 metrics + item cards
   function updateDashboardTotals() {
-    let totalOpening = 0;
-    let totalCurrent = 0;
-    let totalIncome = 0;
-    let totalReceivable = 0;
+    let totalBalance = 0;
+    Object.keys(openingBalances).forEach(k => { totalBalance += n3(openingBalances[k].current); });
 
-    Object.keys(openingBalances).forEach(k => {
-      totalOpening += Number(openingBalances[k].opening || 0);
-      totalCurrent += Number(openingBalances[k].current || 0);
-    });
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let receivableGiven = 0;
+    let receivableReturned = 0;
+    let zakatIncome = 0;
+    let zakatExpense = 0;
 
     transactions.forEach(t => {
-      if (t.type === "income") totalIncome += Number(t.amount);
-      if (t.type === "receivable") totalReceivable += Number(t.amount);
+      const amt = n3(t.amount);
+      const header = normalize(t.header).trim();
+
+      if (t.type === "income") {
+        totalIncome += amt;
+        if (header === "zakat") zakatIncome += amt;
+      }
+      if (t.type === "expense") {
+        totalExpense += amt;
+        if (header === "zakat") zakatExpense += amt;
+      }
+      if (t.type === "receivable") receivableGiven += amt;
+      if (t.type === "return-receivable") receivableReturned += amt;
     });
 
-    dashOpening.textContent = totalOpening.toFixed(3) + " KD";
-    dashCurrent.textContent = totalCurrent.toFixed(3) + " KD";
-    dashIncome.textContent = totalIncome.toFixed(3) + " KD";
-    dashReceivable.textContent = totalReceivable.toFixed(3) + " KD";
+    dashIncome.textContent = fmtKD(totalIncome);
+    dashExpense.textContent = fmtKD(totalExpense);
+    dashBalance.textContent = fmtKD(totalBalance);
+    dashReceivableNet.textContent = fmtKD(receivableGiven - receivableReturned);
+    dashZakatNet.textContent = fmtKD(zakatIncome - zakatExpense);
+
+    renderDashboardItems();
   }
 
-  // Report functions (same as before but with receivable support)
+  function renderDashboardItems() {
+    dashItemsGrid.innerHTML = "";
+    const keys = Object.keys(openingBalances).sort((a,b)=>a.localeCompare(b));
+    keys.forEach(item => {
+      const cur = n3(openingBalances[item].current);
+      const card = document.createElement("div");
+      card.className = "metric-card";
+      card.innerHTML = `
+        <div class="metric-label">${item}</div>
+        <div class="metric-value">${fmtKD(cur)}</div>
+      `;
+      dashItemsGrid.appendChild(card);
+    });
+  }
+
+  // Build Unit dropdown + Report dropdowns
+  function uniqueSorted(arr) {
+    return Array.from(new Set(arr.filter(x => String(x || "").trim() !== ""))).sort((a,b)=>String(a).localeCompare(String(b)));
+  }
+
+  function refreshFiltersUI() {
+    // Units
+    const units = uniqueSorted(transactions.map(t => t.unit));
+    const currentUnit = unitFilter.value || "__all__";
+    unitFilter.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
+    if ([ "__all__", ...units ].includes(currentUnit)) unitFilter.value = currentUnit;
+
+    // Report units
+    const repU = repUnitSel.value || "__all__";
+    repUnitSel.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
+    if ([ "__all__", ...units ].includes(repU)) repUnitSel.value = repU;
+
+    // Items (headers)
+    const items = uniqueSorted(Object.keys(openingBalances));
+    const repI = repItem.value || "__all__";
+    repItem.innerHTML = `<option value="__all__">All Items</option>` + items.map(it => `<option value="${escapeHtml(it)}">${escapeHtml(it)}</option>`).join("");
+    if ([ "__all__", ...items ].includes(repI)) repItem.value = repI;
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Filters events
+  txSearch.addEventListener("input", () => renderTransactionTable());
+  unitFilter.addEventListener("change", () => renderTransactionTable());
+  clearFiltersBtn.addEventListener("click", () => {
+    txSearch.value = "";
+    unitFilter.value = "__all__";
+    renderTransactionTable();
+  });
+
+  // Report preset logic
+  function applyReportPreset() {
+    const preset = repPreset.value;
+    if (preset === "total") {
+      repItem.value = "__all__";
+      repTypeSel.value = "__all__";
+    } else if (preset === "zakat") {
+      repItem.value = "Zakat";
+      repTypeSel.value = "__all__";
+    } else if (preset === "receivable") {
+      repItem.value = "__all__";
+      repTypeSel.value = "receivable"; // show loan given by default
+      // user can change to "All Types" to include returns too
+    }
+  }
+  repPreset.addEventListener("change", applyReportPreset);
+
+  // Report generate
   repBtn.addEventListener("click", function () {
     const from = repFrom.value;
     const to = repTo.value;
@@ -897,13 +1164,350 @@
       alert("Please select valid dates.");
       return;
     }
-    const filtered = transactions.filter(t => t.date >= from && t.date <= to);
-    buildReport(filtered, from, to);
+
+    const itemSel = repItem.value;
+    const unitSel = repUnitSel.value;
+    const typeSel = repTypeSel.value;
+
+    const filtered = transactions.filter(t => {
+      const d = t.date || "";
+      if (d < from || d > to) return false;
+      if (unitSel !== "__all__" && String(t.unit || "") !== unitSel) return false;
+      if (itemSel !== "__all__" && String(t.header || "") !== itemSel) return false;
+      if (typeSel !== "__all__" && String(t.type || "") !== typeSel) return false;
+      return true;
+    });
+
+    buildReport(filtered, from, to, { itemSel, unitSel, typeSel });
   });
 
-  // ... (report functions remain the same, just add receivable handling in buildReport similar to above)
+  function buildReport(filtered, from, to, filters) {
+    reportArea.classList.remove("hidden");
 
+    let income = 0, expense = 0, recvGiven = 0, recvReturn = 0;
+    let net = 0;
+
+    const itemMap = {};
+    const catMap = {};
+
+    filtered.forEach(t => {
+      const amt = n3(t.amount);
+      const item = (t.header || "Other").trim() || "Other";
+      const cat = (t.category || "Uncategorized").trim() || "Uncategorized";
+
+      if (!itemMap[item]) itemMap[item] = { income:0, expense:0, recvNet:0, net:0 };
+
+      if (t.type === "income") income += amt;
+      if (t.type === "expense") expense += amt;
+      if (t.type === "receivable") recvGiven += amt;
+      if (t.type === "return-receivable") recvReturn += amt;
+
+      if (t.type === "income") itemMap[item].income += amt;
+      if (t.type === "expense") itemMap[item].expense += amt;
+
+      if (t.type === "receivable") itemMap[item].recvNet -= amt;
+      if (t.type === "return-receivable") itemMap[item].recvNet += amt;
+
+      const eff = netEffect(t);
+      itemMap[item].net += eff;
+      net += eff;
+
+      if (!catMap[cat]) catMap[cat] = 0;
+      catMap[cat] += eff;
+    });
+
+    const receivableNet = recvGiven - recvReturn;
+
+    const fItem = (filters.itemSel === "__all__") ? "All Items" : filters.itemSel;
+    const fUnit = (filters.unitSel === "__all__") ? "All Units" : filters.unitSel;
+    const fType = (filters.typeSel === "__all__") ? "All Types" : typeLabel(filters.typeSel);
+
+    reportMeta.textContent = `${from} → ${to} • Entries: ${filtered.length} • ${fItem} • ${fUnit} • ${fType}`;
+    reportSummary.innerHTML = `
+      <div><b>Total Income:</b> ${fmtKD(income)} |
+           <b>Total Expense:</b> ${fmtKD(expense)} |
+           <b>Receivable Net:</b> ${fmtKD(receivableNet)} |
+           <b>Net Balance:</b> ${fmtKD(net)}</div>
+    `;
+
+    reportTableBody.innerHTML = "";
+    filtered.forEach((t, idx) => {
+      const tr = document.createElement("tr");
+      const sign = (t.type === "expense" || t.type === "receivable") ? "-" : "";
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td>${t.date || ""}</td>
+        <td>${t.unit || ""}</td>
+        <td>${typeLabel(t.type)}</td>
+        <td>${t.header || ""}</td>
+        <td>${t.shortCode || ""}</td>
+        <td>${t.category || ""}</td>
+        <td>${t.description || ""}</td>
+        <td class="text-right">${sign}${n3(t.amount).toFixed(3)}</td>
+        <td>${t.remarks || ""}</td>
+      `;
+      reportTableBody.appendChild(tr);
+    });
+
+    reportNetCell.textContent = n3(net).toFixed(3);
+
+    reportItemTableBody.innerHTML = "";
+    Object.keys(itemMap).sort().forEach(item => {
+      const v = itemMap[item];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item}</td>
+        <td class="text-right">${n3(v.income).toFixed(3)}</td>
+        <td class="text-right">${n3(v.expense).toFixed(3)}</td>
+        <td class="text-right">${n3(v.recvNet).toFixed(3)}</td>
+        <td class="text-right">${n3(v.net).toFixed(3)}</td>
+      `;
+      reportItemTableBody.appendChild(tr);
+    });
+
+    const catKeys = Object.keys(catMap);
+    reportCategoryCount.textContent = String(catKeys.length);
+
+    let topCat = "-";
+    let topVal = -Infinity;
+    catKeys.forEach(k => { if (catMap[k] > topVal) { topVal = catMap[k]; topCat = k; } });
+    reportTopCategory.textContent = (topCat === "-") ? "-" : `${topCat} (${n3(topVal).toFixed(3)})`;
+
+    renderCategoryPie(catMap);
+
+    lastReport = { from, to, filters, filtered, summary: { income, expense, receivableNet, net }, itemMap, catMap };
+    saveToStorage();
+  }
+
+  function renderCategoryPie(catMap) {
+    const canvas = document.getElementById("categoryPieChart");
+    if (!canvas) return;
+
+    const labels = Object.keys(catMap).sort();
+    const values = labels.map(l => Math.abs(n3(catMap[l])));
+    const allZero = values.every(v => v === 0);
+
+    if (pieChartInstance) {
+      pieChartInstance.destroy();
+      pieChartInstance = null;
+    }
+
+    pieChartInstance = new Chart(canvas, {
+      type: "pie",
+      data: {
+        labels: allZero ? ["No Data"] : labels,
+        datasets: [{ data: allZero ? [1] : values }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom" },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const label = ctx.label || "";
+                if (allZero) return label;
+                const idx = ctx.dataIndex;
+                const real = n3(catMap[labels[idx]]);
+                return `${label}: ${real.toFixed(3)} KD`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // PDF export
+  pdfBtn.addEventListener("click", function () {
+    if (!lastReport) {
+      alert("Please generate a report first.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+    const margin = 40;
+    let y = margin;
+
+    function line(txt, size=11, bold=false) {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      const lines = doc.splitTextToSize(txt, 520);
+      lines.forEach(l => {
+        if (y > 780) { doc.addPage(); y = margin; }
+        doc.text(l, margin, y);
+        y += size + 6;
+      });
+    }
+
+    line("IIC Kuwait Finance Report", 16, true);
+    line(`Period: ${lastReport.from} to ${lastReport.to}`, 11, false);
+    line(`Filters: ${lastReport.filters ? JSON.stringify(lastReport.filters) : ""}`, 10, false);
+    y += 6;
+
+    line(`Total Income: ${lastReport.summary.income.toFixed(3)} KD`, 11, false);
+    line(`Total Expense: ${lastReport.summary.expense.toFixed(3)} KD`, 11, false);
+    line(`Receivable Net: ${lastReport.summary.receivableNet.toFixed(3)} KD`, 11, false);
+    line(`Net Balance: ${lastReport.summary.net.toFixed(3)} KD`, 11, true);
+
+    y += 10;
+    line("Entries (first 35 rows):", 12, true);
+
+    const rows = lastReport.filtered.slice(0, 35);
+    rows.forEach((t, i) => {
+      const sign = (t.type === "expense" || t.type === "receivable") ? "-" : "+";
+      line(`${i+1}. ${t.date} | ${t.unit || ""} | ${typeLabel(t.type)} | ${t.header || ""} | ${sign}${n3(t.amount).toFixed(3)} KD | ${t.description || ""}`, 10, false);
+    });
+
+    doc.save(`IIC_Finance_Report_${lastReport.from}_to_${lastReport.to}.pdf`);
+  });
+
+  /* BACKUP & RESTORE */
+  function makeBackupObject() {
+    return {
+      version: 1,
+      createdAt: new Date().toISOString(),
+      keys: { LS_OPENING, LS_TX, LS_CATEGORIES },
+      data: {
+        openingBalances,
+        transactions,
+        categories: Array.from(categorySet)
+      }
+    };
+  }
+
+  function downloadJSON(filename, obj) {
+    const json = JSON.stringify(obj, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function validateBackupObject(obj) {
+    if (!obj || typeof obj !== "object") return "Invalid backup file.";
+    if (!obj.data || typeof obj.data !== "object") return "Backup missing data.";
+    if (!obj.data.openingBalances || typeof obj.data.openingBalances !== "object") return "Missing openingBalances.";
+    if (!Array.isArray(obj.data.transactions)) return "Missing transactions array.";
+    if (!Array.isArray(obj.data.categories)) return "Missing categories array.";
+    return null;
+  }
+
+  function applyBackupObject(obj) {
+    const err = validateBackupObject(obj);
+    if (err) { alert(err); return false; }
+
+    openingBalances = obj.data.openingBalances;
+    transactions = obj.data.transactions;
+    categorySet = new Set(obj.data.categories);
+
+    localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
+    localStorage.setItem(LS_TX, JSON.stringify(transactions));
+    localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
+
+    renderOpeningTable();
+    refreshFiltersUI();
+    renderTransactionTable();
+    updateTotals();
+    updateCategoryDatalist();
+    updateDashboardTotals();
+
+    showStatus("✓ Restore completed");
+    return true;
+  }
+
+  function backupToText(obj) {
+    const json = JSON.stringify(obj);
+    const utf8 = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16)));
+    return btoa(utf8);
+  }
+
+  function textToBackup(text) {
+    const bin = atob(text.trim());
+    const esc = bin.split("").map(c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+    const json = decodeURIComponent(esc);
+    return JSON.parse(json);
+  }
+
+  backupBtn.addEventListener("click", () => {
+    const obj = makeBackupObject();
+    const filename = `IIC_Finance_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    downloadJSON(filename, obj);
+    showStatus("✓ Backup downloaded");
+  });
+
+  restoreBtn.addEventListener("click", () => { restoreFile.click(); });
+
+  restoreFile.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const text = await file.text();
+    let obj;
+    try { obj = JSON.parse(text); }
+    catch { alert("Invalid JSON file."); restoreFile.value = ""; return; }
+
+    if (!confirm("Restore will REPLACE current data in this browser. Continue?")) {
+      restoreFile.value = "";
+      return;
+    }
+
+    applyBackupObject(obj);
+    restoreFile.value = "";
+  });
+
+  copyBackupBtn.addEventListener("click", () => {
+    const obj = makeBackupObject();
+    const txt = backupToText(obj);
+    backupText.value = txt;
+
+    backupTextWrap.classList.remove("hidden");
+    restoreTextWrap.classList.add("hidden");
+
+    backupText.focus();
+    backupText.select();
+    try { document.execCommand("copy"); } catch {}
+    showStatus("✓ Backup copied");
+  });
+
+  pasteRestoreBtn.addEventListener("click", () => {
+    restoreText.value = "";
+    restoreTextWrap.classList.remove("hidden");
+    backupTextWrap.classList.add("hidden");
+  });
+
+  cancelRestoreTextBtn.addEventListener("click", () => {
+    restoreTextWrap.classList.add("hidden");
+  });
+
+  applyRestoreTextBtn.addEventListener("click", () => {
+    const txt = (restoreText.value || "").trim();
+    if (!txt) { alert("Paste backup text first."); return; }
+
+    let obj;
+    try { obj = textToBackup(txt); }
+    catch { alert("Invalid backup text."); return; }
+
+    if (!confirm("Restore will REPLACE current data in this browser. Continue?")) return;
+    applyBackupObject(obj);
+    restoreTextWrap.classList.add("hidden");
+  });
+
+  /* START */
   setupFormButtons();
+
+  // keep report filters in sync when items/units change
+  function syncReportDropdownsSoon() {
+    setTimeout(() => refreshFiltersUI(), 0);
+  }
 </script>
 </body>
 </html>
