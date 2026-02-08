@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Request Payment – IIC Kuwait</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg: #f2f6ff;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #d0d7e2;
+      --primary: #2563eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 14px;
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(circle at top left, #e0edff, #f2f6ff);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0 0 6px;
+    }
+
+    .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 10px 0 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f9fbff;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      background: #ffffff;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .hide { display: none; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Request Payment</h1>
+      <div class="sub">
+        Submit reimbursement / payment request.  
+        Admin will receive this by email.
+      </div>
+
+      <!-- FORM -->
+      <form action="https://formsubmit.co/iickuwait1@gmail.com" method="POST" enctype="multipart/form-data">
+
+        <!-- Security / settings -->
+        <input type="hidden" name="_captcha" value="true">
+        <input type="hidden" name="_subject" value="New Payment Request – IIC Kuwait">
+
+        <div class="row">
+          <div>
+            <label>Date *</label>
+            <input type="date" name="Date" required>
+          </div>
+          <div>
+            <label>Unit *</label>
+            <input type="text" name="Unit" placeholder="Abbasiya / Farwaniya" required>
+          </div>
+        </div>
+
+        <label>Subject *</label>
+        <input type="text" name="Subject" placeholder="Meeting expense / Printing" required>
+
+        <label>Description *</label>
+        <textarea name="Description" placeholder="Explain the expense clearly" required></textarea>
+
+        <label>Amount (KD) *</label>
+        <input type="number" name="Amount_KD" step="0.001" min="0" placeholder="0.000" required>
+
+        <label>Requested By (Name) *</label>
+        <input type="text" name="Requested_By" placeholder="Full name" required>
+
+        <label>User Email *</label>
+        <input type="email" name="User_Email" placeholder="name@example.com" required>
+
+        <label>Phone / WhatsApp (optional but useful)</label>
+        <input type="text" name="Phone_WhatsApp" placeholder="+965...">
+
+        <label>Payment Method *</label>
+        <select name="Payment_Method" id="pm" required>
+          <option value="Cash">Cash</option>
+          <option value="Link">Link</option>
+          <option value="Wamd">Wamd</option>
+        </select>
+
+        <div id="paymentDetailsWrap" class="hide">
+          <label>Wamd number / Payment link *</label>
+          <input type="text" name="Payment_Details" id="paymentDetails"
+                 placeholder="9xxxxxxx or https://...">
+        </div>
+
+        <label>Attach Invoice (optional)</label>
+        <input type="file" name="Invoice" accept="image/*,.pdf">
+
+        <button class="btn" type="submit">Submit Request</button>
+
+        <div class="small">
+          Same link can be used anytime. Mobile friendly.
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+  // auto today
+  document.querySelector('input[type="date"]').value =
+    new Date().toISOString().slice(0, 10);
+
+  // payment method logic
+  const pm = document.getElementById("pm");
+  const wrap = document.getElementById("paymentDetailsWrap");
+  const field = document.getElementById("paymentDetails");
+
+  function togglePayment() {
+    const need = pm.value === "Link" || pm.value === "Wamd";
+    wrap.classList.toggle("hide", !need);
+    field.required = need;
+    if (!need) field.value = "";
+  }
+
+  pm.addEventListener("change", togglePayment);
+  togglePayment();
+</script>
+</body>
+</html>
