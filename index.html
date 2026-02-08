@@ -338,6 +338,28 @@
       <div class="dashboard-grid dashboard-5 mt-10" id="dashItemsGrid"></div>
     </div>
 
+    <!-- ✅ NEW: Person Balance Dashboard (does NOT affect existing calculations) -->
+    <div class="card">
+      <h2>Person Balance Dashboard</h2>
+      <div class="small mt-5">
+        Track balances by person (who holds/spent). Choose a Title/Pool to filter (example: Zakat / Working Fund / Project).
+      </div>
+
+      <div class="flex-row mt-10">
+        <div class="flex-item">
+          <label for="personPoolFilter">Title / Pool</label>
+          <select id="personPoolFilter">
+            <option value="__all__">All Titles</option>
+          </select>
+        </div>
+        <div class="flex-item" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-secondary" id="personPoolClearBtn">Clear</button>
+        </div>
+      </div>
+
+      <div class="dashboard-grid dashboard-5 mt-10" id="personBalanceGrid"></div>
+    </div>
+
     <!-- Opening balances -->
     <div class="card">
       <h2>Opening & Current Balances</h2>
@@ -396,6 +418,23 @@
           <label for="txCategory">Category</label>
           <input list="categoryList" id="txCategory" placeholder="Food, Meeting expense, ...">
           <datalist id="categoryList"></datalist>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: Title/Pool + Person (Optional fields; old data remains same) -->
+      <div class="flex-row">
+        <div class="flex-item">
+          <label for="txPoolTitle">Title / Pool (optional)</label>
+          <input type="text" id="txPoolTitle" placeholder="Example: Zakat / Working Fund / Project">
+        </div>
+        <div class="flex-item">
+          <label for="txPerson">Person (who holds/spent) (optional)</label>
+          <input list="peopleList" id="txPerson" placeholder="Example: Person 1 / Sahad / Ahmed">
+          <datalist id="peopleList"></datalist>
+        </div>
+        <div class="flex-item">
+          <label>&nbsp;</label>
+          <div class="small">For Expense: choose who paid/spent.</div>
         </div>
       </div>
 
@@ -683,6 +722,11 @@
   const txRemarks = document.getElementById("txRemarks");
   const formButtons = document.getElementById("formButtons");
 
+  // ✅ NEW fields DOM
+  const txPoolTitle = document.getElementById("txPoolTitle");
+  const txPerson = document.getElementById("txPerson");
+  const peopleList = document.getElementById("peopleList");
+
   const txSearch = document.getElementById("txSearch");
   const unitFilter = document.getElementById("unitFilter");
   const clearFiltersBtn = document.getElementById("clearFiltersBtn");
@@ -716,6 +760,11 @@
   const dashReceivableNet = document.getElementById("dashReceivableNet");
   const dashZakatNet = document.getElementById("dashZakatNet");
   const dashItemsGrid = document.getElementById("dashItemsGrid");
+
+  // ✅ NEW: Person dashboard DOM
+  const personPoolFilter = document.getElementById("personPoolFilter");
+  const personPoolClearBtn = document.getElementById("personPoolClearBtn");
+  const personBalanceGrid = document.getElementById("personBalanceGrid");
 
   // Backup/Restore DOM
   const backupBtn = document.getElementById("backupBtn");
@@ -779,6 +828,7 @@
   }
 
   function normalize(s) { return String(s || "").toLowerCase(); }
+  function valOrEmpty(x){ return String(x || "").trim(); }
 
   function ensureItemExists(header) {
     if (!openingBalances[header]) openingBalances[header] = { opening: 0, current: 0 };
@@ -836,6 +886,95 @@
   }
 
   /***********************
+   * ✅ PERSON DASHBOARD (NEW, SAFE)
+   ***********************/
+  function getAllTitlesFromTx() {
+    return uniqueSorted(transactions.map(t => valOrEmpty(t.poolTitle))).filter(Boolean);
+  }
+
+  function getAllPeopleFromTx() {
+    return uniqueSorted(transactions.map(t => valOrEmpty(t.person))).filter(Boolean);
+  }
+
+  function updatePeopleDatalist() {
+    if (!peopleList) return;
+    peopleList.innerHTML = "";
+    getAllPeopleFromTx().forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p;
+      peopleList.appendChild(opt);
+    });
+  }
+
+  function computePersonBalances(selectedTitle) {
+    const out = {};
+    transactions.forEach(t => {
+      const person = valOrEmpty(t.person);
+      if (!person) return; // old tx without person won't affect
+      const title = valOrEmpty(t.poolTitle);
+
+      if (selectedTitle && selectedTitle !== "__all__") {
+        if (title !== selectedTitle) return;
+      }
+
+      const eff = netEffect(t);
+      out[person] = (out[person] || 0) + eff;
+    });
+    return out;
+  }
+
+  function renderPersonBalances() {
+    if (!personBalanceGrid) return;
+
+    const selectedTitle = personPoolFilter ? (personPoolFilter.value || "__all__") : "__all__";
+    const balances = computePersonBalances(selectedTitle);
+
+    personBalanceGrid.innerHTML = "";
+    const people = Object.keys(balances).sort((a,b)=>a.localeCompare(b));
+
+    if (people.length === 0) {
+      const card = document.createElement("div");
+      card.className = "metric-card";
+      card.innerHTML = `
+        <div class="metric-label">No person data yet</div>
+        <div class="metric-value">Add entries with Person selected</div>
+      `;
+      personBalanceGrid.appendChild(card);
+      return;
+    }
+
+    people.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "metric-card";
+      card.innerHTML = `
+        <div class="metric-label">${escapeHtml(p)}</div>
+        <div class="metric-value">${fmtKD(balances[p])}</div>
+      `;
+      personBalanceGrid.appendChild(card);
+    });
+  }
+
+  function refreshPersonDashboardUI() {
+    if (personPoolFilter) {
+      const titles = getAllTitlesFromTx();
+      const cur = personPoolFilter.value || "__all__";
+      personPoolFilter.innerHTML =
+        `<option value="__all__">All Titles</option>` +
+        titles.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+      if (["__all__", ...titles].includes(cur)) personPoolFilter.value = cur;
+    }
+
+    updatePeopleDatalist();
+    renderPersonBalances();
+  }
+
+  if (personPoolFilter) personPoolFilter.addEventListener("change", renderPersonBalances);
+  if (personPoolClearBtn) personPoolClearBtn.addEventListener("click", () => {
+    if (personPoolFilter) personPoolFilter.value = "__all__";
+    renderPersonBalances();
+  });
+
+  /***********************
    * LOCAL STORAGE (CACHE)
    ***********************/
   function loadFromLocalCache() {
@@ -854,7 +993,7 @@
 
   function saveToLocalCache() {
     try {
-      cleanUnusedItems(); // ✅ ensure it stays clean before saving
+      cleanUnusedItems(); // ✅ keep it clean before saving
       localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
       localStorage.setItem(LS_TX, JSON.stringify(transactions));
       localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
@@ -1201,6 +1340,8 @@
     txHeader.value = "";
     txShortCode.value = "";
     txCategory.value = "";
+    if (txPoolTitle) txPoolTitle.value = "";
+    if (txPerson) txPerson.value = "";
     txDesc.value = "";
     txAmount.value = "";
     txRemarks.value = "";
@@ -1216,6 +1357,8 @@
     txHeader.value = t.header || "";
     txShortCode.value = t.shortCode || "";
     txCategory.value = t.category || "";
+    if (txPoolTitle) txPoolTitle.value = t.poolTitle || "";
+    if (txPerson) txPerson.value = t.person || "";
     txDesc.value = t.description || "";
     txAmount.value = n3(t.amount);
     txRemarks.value = t.remarks || "";
@@ -1253,6 +1396,8 @@
     const header = txHeader.value.trim() || "Other";
     const shortCode = txShortCode.value.trim();
     const category = txCategory.value.trim();
+    const poolTitle = txPoolTitle ? txPoolTitle.value.trim() : "";
+    const person = txPerson ? txPerson.value.trim() : "";
     const description = txDesc.value.trim();
     const amount = parseFloat(txAmount.value);
     const remarks = txRemarks.value.trim();
@@ -1276,7 +1421,9 @@
       const newTx = {
         id: old.id,
         _docId: old._docId || null,
-        date, unit, type, header, shortCode, category, description, amount, remarks
+        date, unit, type, header, shortCode, category,
+        poolTitle, person,
+        description, amount, remarks
       };
       transactions[editingIndex] = newTx;
 
@@ -1288,7 +1435,9 @@
       const tx = {
         id: transactions.length ? Math.max(...transactions.map(x => Number(x.id||0))) + 1 : 1,
         _docId: null,
-        date, unit, type, header, shortCode, category, description, amount, remarks
+        date, unit, type, header, shortCode, category,
+        poolTitle, person,
+        description, amount, remarks
       };
       transactions.push(tx);
 
@@ -1308,6 +1457,7 @@
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
+    refreshPersonDashboardUI(); // ✅ update new dashboard
 
     await persistAllAfterLocalChange();
 
@@ -1342,6 +1492,7 @@
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
+    refreshPersonDashboardUI(); // ✅ update new dashboard
 
     await persistAllAfterLocalChange();
     showStatus("✓ Entry deleted", "ok");
@@ -1646,7 +1797,6 @@
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
     cleanUnusedItems(); // ✅ clean after restore
-
     saveToLocalCache();
 
     renderOpeningTable();
@@ -1654,6 +1804,7 @@
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
+    refreshPersonDashboardUI(); // ✅ show person balances after restore
 
     showStatus("✓ Restore completed (local)", "ok");
     return true;
@@ -1741,6 +1892,7 @@
         renderTransactionTable();
         updateTotals();
         updateDashboardTotals();
+        refreshPersonDashboardUI(); // ✅ show person balances after pull
         showStatus("✓ Loaded from Cloud", "ok");
       } else {
         showStatus("ℹ Cloud is empty", "warn");
@@ -1777,13 +1929,14 @@
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
 
-    cleanUnusedItems(); // ✅ BEST PLACE (after sync, before UI)
+    cleanUnusedItems(); // ✅ after sync, before UI
 
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
+    refreshPersonDashboardUI(); // ✅ init person dashboard
     applyReportPresetStartup();
   }
 
