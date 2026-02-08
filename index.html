@@ -428,7 +428,6 @@
     <div class="card">
       <h2>All Entries</h2>
 
-      <!-- Search + Unit Filter -->
       <div class="flex-row mt-10">
         <div class="flex-item">
           <label for="txSearch">Search</label>
@@ -479,7 +478,6 @@
     <div class="card">
       <h2>Report</h2>
 
-      <!-- Preset + Filters -->
       <div class="flex-row mt-10">
         <div class="flex-item">
           <label for="repPreset">Report Type</label>
@@ -631,7 +629,7 @@
   const db = getFirestore(fbApp);
 
   // Firestore paths
-  const DOC_STATE = doc(db, "finance", "state");      // openingBalances + categories + updatedAt
+  const DOC_STATE = doc(db, "finance", "state");
   const DOC_LAST_REPORT = doc(db, "finance", "lastReport");
   const COL_TX = collection(db, "transactions");
 
@@ -641,7 +639,6 @@
   const VALID_USER = "sahad";
   const VALID_PASS = "sa&4Er6A@Q";
 
-  /* IMPORTANT: keep keys same to NOT lose existing local data (used as cache/backup) */
   const LS_OPENING = "iic_fin_opening";
   const LS_TX = "iic_fin_transactions";
   const LS_LAST_REPORT = "iic_fin_last_report";
@@ -652,7 +649,7 @@
     "Zakat": { opening: 0, current: 0 },
     "Other": { opening: 0, current: 0 }
   };
-  let transactions = [];   // each item may include _docId for firestore
+  let transactions = [];
   let categorySet = new Set();
   let editingIndex = null;
 
@@ -713,7 +710,6 @@
   const reportTopCategory = document.getElementById("reportTopCategory");
   const reportCategoryCount = document.getElementById("reportCategoryCount");
 
-  // Dashboard
   const dashIncome = document.getElementById("dashIncome");
   const dashExpense = document.getElementById("dashExpense");
   const dashBalance = document.getElementById("dashBalance");
@@ -753,7 +749,6 @@
     if (!Number.isFinite(v)) return 0;
     return v;
   }
-
   function fmtKD(x) { return n3(x).toFixed(3) + " KD"; }
 
   function typeLabel(type) {
@@ -765,7 +760,6 @@
     return type || "";
   }
 
-  // Net effect for reporting:
   function netEffect(t) {
     const amt = n3(t.amount);
     if (t.type === "income") return +amt;
@@ -811,22 +805,34 @@
   }
 
   function refreshFiltersUI() {
-    // Units
     const units = uniqueSorted(transactions.map(t => t.unit));
     const currentUnit = unitFilter.value || "__all__";
     unitFilter.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
     if ([ "__all__", ...units ].includes(currentUnit)) unitFilter.value = currentUnit;
 
-    // Report units
     const repU = repUnitSel.value || "__all__";
     repUnitSel.innerHTML = `<option value="__all__">All Units</option>` + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
     if ([ "__all__", ...units ].includes(repU)) repUnitSel.value = repU;
 
-    // Items (headers)
     const items = uniqueSorted(Object.keys(openingBalances));
     const repI = repItem.value || "__all__";
     repItem.innerHTML = `<option value="__all__">All Items</option>` + items.map(it => `<option value="${escapeHtml(it)}">${escapeHtml(it)}</option>`).join("");
     if ([ "__all__", ...items ].includes(repI)) repItem.value = repI;
+  }
+
+  /***********************
+   * ✅ CLEAN UNUSED ITEMS
+   ***********************/
+  function cleanUnusedItems() {
+    const used = new Set();
+    transactions.forEach(t => {
+      const h = String(t.header || "").trim();
+      if (h) used.add(h);
+    });
+
+    Object.keys(openingBalances).forEach(k => {
+      if (!used.has(k)) delete openingBalances[k];
+    });
   }
 
   /***********************
@@ -848,6 +854,7 @@
 
   function saveToLocalCache() {
     try {
+      cleanUnusedItems(); // ✅ ensure it stays clean before saving
       localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
       localStorage.setItem(LS_TX, JSON.stringify(transactions));
       localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
@@ -861,7 +868,6 @@
    * FIRESTORE LOAD/SAVE
    ***********************/
   async function cloudLoad() {
-    // state
     const stateSnap = await getDoc(DOC_STATE);
     let cloudHasState = false;
 
@@ -871,22 +877,14 @@
         openingBalances = d.openingBalances;
         cloudHasState = true;
       }
-      if (d && Array.isArray(d.categories)) {
-        categorySet = new Set(d.categories);
-      }
-      if (d && d.updatedAt) {
-        cloudInfo.textContent = "Cloud: state loaded.";
-      }
+      if (d && Array.isArray(d.categories)) categorySet = new Set(d.categories);
+      if (d && d.updatedAt) cloudInfo.textContent = "Cloud: state loaded.";
     }
 
-    // transactions
     const txSnap = await getDocs(COL_TX);
     const cloudTx = [];
-    txSnap.forEach(docu => {
-      cloudTx.push({ _docId: docu.id, ...docu.data() });
-    });
+    txSnap.forEach(docu => cloudTx.push({ _docId: docu.id, ...docu.data() }));
 
-    // last report (optional)
     const lrSnap = await getDoc(DOC_LAST_REPORT);
     if (lrSnap.exists()) lastReport = lrSnap.data();
 
@@ -894,6 +892,7 @@
   }
 
   async function cloudSaveState() {
+    cleanUnusedItems(); // ✅ keep cloud state clean too
     await setDoc(DOC_STATE, {
       openingBalances,
       categories: Array.from(categorySet),
@@ -901,8 +900,13 @@
     }, { merge: true });
   }
 
+  function stripInternal(t) {
+    const copy = { ...t };
+    delete copy._docId;
+    return copy;
+  }
+
   async function cloudUpsertTransaction(t) {
-    // If has _docId, overwrite it. Else create new.
     if (t._docId) {
       await setDoc(doc(db, "transactions", t._docId), stripInternal(t), { merge: true });
       return t._docId;
@@ -918,38 +922,19 @@
     await deleteDoc(doc(db, "transactions", docId));
   }
 
-  function stripInternal(t) {
-    const copy = { ...t };
-    delete copy._docId;
-    return copy;
-  }
-
   async function cloudPushAllLocalToCloud(overwrite=true) {
-    // WARNING: This will REPLACE cloud with local.
-    // We'll delete existing cloud tx then re-add.
     const txSnap = await getDocs(COL_TX);
     const batch = writeBatch(db);
-
     txSnap.forEach(d => batch.delete(doc(db, "transactions", d.id)));
     await batch.commit();
 
-    // Write state first
     await cloudSaveState();
 
-    // Re-add tx
-    const batch2 = writeBatch(db);
-    transactions.forEach((t) => {
-      // create deterministic doc ids? We will just set with auto ids by addDoc is not possible in batch.
-      // Use setDoc with generated IDs: "tx_<id>_<date>_<rand>" to keep stable
-    });
-
-    // We'll add sequentially (safe and simple)
     for (const t of transactions) {
       t._docId = null;
       await cloudUpsertTransaction(t);
     }
 
-    // Save last report (optional)
     if (lastReport) await setDoc(DOC_LAST_REPORT, lastReport, { merge: true });
 
     saveToLocalCache();
@@ -959,10 +944,8 @@
    * MIGRATION LOGIC
    ***********************/
   async function initialSyncStrategy() {
-    // 1) Load local cache (so you don't lose your existing PC data)
     loadFromLocalCache();
 
-    // 2) Load cloud
     let cloud = null;
     try {
       cloud = await cloudLoad();
@@ -970,17 +953,14 @@
       console.error(e);
       cloudInfo.textContent = "Cloud: cannot load (check Firestore rules / internet). Using local cache.";
       showStatus("⚠ Cloud load failed. Using local cache.", "warn");
-      return; // stay on local cache only
+      return;
     }
 
-    // 3) Decide what to use
     const localTxCount = Array.isArray(transactions) ? transactions.length : 0;
     const cloudTxCount = cloud.cloudTxCount;
 
-    // If cloud has data -> use cloud as source of truth
     if (cloudTxCount > 0 || cloud.cloudHasState) {
       transactions = cloud.cloudTx || [];
-      // Ensure opening balances exist even if missing
       if (!openingBalances || typeof openingBalances !== "object") {
         openingBalances = {
           "Working Fund": { opening: 0, current: 0 },
@@ -990,13 +970,13 @@
       }
       rebuildCategorySetFromTransactions();
       updateCategoryDatalist();
+      cleanUnusedItems();      // ✅ clean after cloud load
       saveToLocalCache();
       cloudInfo.textContent = `Cloud: loaded ${cloudTxCount} transactions.`;
       showStatus("✓ Cloud data loaded", "ok");
       return;
     }
 
-    // Cloud empty but local has data -> offer to upload local to cloud
     if (cloudTxCount === 0 && localTxCount > 0) {
       cloudInfo.textContent = `Cloud is empty. Local has ${localTxCount} entries.`;
       const ok = confirm(
@@ -1017,7 +997,6 @@
       return;
     }
 
-    // Both empty -> do nothing
     cloudInfo.textContent = "Cloud is empty. Start adding entries.";
   }
 
@@ -1165,7 +1144,6 @@
       txTableBody.appendChild(tr);
     });
 
-    // attach handlers
     txTableBody.querySelectorAll("[data-edit]").forEach(btn => {
       btn.addEventListener("click", () => enterEditMode(Number(btn.dataset.edit)));
     });
@@ -1206,18 +1184,6 @@
       openingBalances[header].current = n3(openingBalances[header].current) - amt;
     }
   }
-function reverseTransactionEffect(header, type, amount) {
-  ...
-}
-
-function cleanUnusedItems() {
-  const used = new Set();
-  transactions.forEach(t => { if (t.header) used.add(t.header); });
-
-  Object.keys(openingBalances).forEach(k => {
-    if (!used.has(k)) delete openingBalances[k];
-  });
-}
 
   /***********************
    * FORM (ADD / EDIT)
@@ -1270,9 +1236,7 @@ function cleanUnusedItems() {
   }
 
   async function persistAllAfterLocalChange() {
-    // Save local cache
     saveToLocalCache();
-    // Save cloud state
     try {
       await cloudSaveState();
       showStatus("✓ Saved to Cloud", "ok");
@@ -1307,10 +1271,8 @@ function cleanUnusedItems() {
       const oldAmount = n3(old.amount);
       ensureItemExists(oldHeader);
 
-      // reverse old local effect
       reverseTransactionEffect(oldHeader, old.type, oldAmount);
 
-      // update local object
       const newTx = {
         id: old.id,
         _docId: old._docId || null,
@@ -1318,16 +1280,10 @@ function cleanUnusedItems() {
       };
       transactions[editingIndex] = newTx;
 
-      // apply new local effect
       applyTransactionEffect(header, type, amount);
 
-      // cloud write tx
-      try {
-        await cloudUpsertTransaction(newTx);
-      } catch (e) {
-        console.error(e);
-        showStatus("⚠ Transaction save failed to cloud. Local saved.", "warn");
-      }
+      try { await cloudUpsertTransaction(newTx); }
+      catch (e) { console.error(e); showStatus("⚠ Transaction save failed to cloud. Local saved.", "warn"); }
     } else {
       const tx = {
         id: transactions.length ? Math.max(...transactions.map(x => Number(x.id||0))) + 1 : 1,
@@ -1336,20 +1292,17 @@ function cleanUnusedItems() {
       };
       transactions.push(tx);
 
-      // apply local
       applyTransactionEffect(header, type, amount);
 
-      // cloud create tx
-      try {
-        await cloudUpsertTransaction(tx);
-      } catch (e) {
-        console.error(e);
-        showStatus("⚠ Transaction save failed to cloud. Local saved.", "warn");
-      }
+      try { await cloudUpsertTransaction(tx); }
+      catch (e) { console.error(e); showStatus("⚠ Transaction save failed to cloud. Local saved.", "warn"); }
     }
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+
+    cleanUnusedItems(); // ✅ remove unused items after changes
+
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
@@ -1372,22 +1325,18 @@ function cleanUnusedItems() {
     const msg = `Delete entry?\n\n${t.date} | ${t.unit} | ${typeLabel(t.type)} | ${t.header} | ${n3(t.amount).toFixed(3)} KD`;
     if (!confirm(msg)) return;
 
-    // reverse local effect
     reverseTransactionEffect(t.header || "Other", t.type, n3(t.amount));
 
-    // cloud delete
-    try {
-      await cloudDeleteTransaction(t._docId);
-    } catch (e) {
-      console.error(e);
-      showStatus("⚠ Cloud delete failed. Local removed.", "warn");
-    }
+    try { await cloudDeleteTransaction(t._docId); }
+    catch (e) { console.error(e); showStatus("⚠ Cloud delete failed. Local removed.", "warn"); }
 
-    // remove local
     transactions.splice(idx, 1);
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+
+    cleanUnusedItems(); // ✅ remove unused items after delete
+
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
@@ -1547,7 +1496,6 @@ function cleanUnusedItems() {
 
     lastReport = { from, to, filters, filtered, summary: { income, expense, receivableNet, net }, itemMap, catMap };
     saveToLocalCache();
-    // save last report to cloud (optional)
     setDoc(DOC_LAST_REPORT, lastReport, { merge:true }).catch(()=>{});
   }
 
@@ -1646,7 +1594,7 @@ function cleanUnusedItems() {
       createdAt: new Date().toISOString(),
       data: {
         openingBalances,
-        transactions: transactions.map(stripInternal), // remove firestore ids for portability
+        transactions: transactions.map(stripInternal),
         categories: Array.from(categorySet)
       }
     };
@@ -1692,8 +1640,12 @@ function cleanUnusedItems() {
     if (err) { alert(err); return false; }
 
     openingBalances = obj.data.openingBalances;
-    transactions = obj.data.transactions.map(t => ({ ...t, _docId: null })); // new docs in cloud later
+    transactions = obj.data.transactions.map(t => ({ ...t, _docId: null }));
     categorySet = new Set(obj.data.categories);
+
+    rebuildCategorySetFromTransactions();
+    updateCategoryDatalist();
+    cleanUnusedItems(); // ✅ clean after restore
 
     saveToLocalCache();
 
@@ -1701,7 +1653,6 @@ function cleanUnusedItems() {
     refreshFiltersUI();
     renderTransactionTable();
     updateTotals();
-    updateCategoryDatalist();
     updateDashboardTotals();
 
     showStatus("✓ Restore completed (local)", "ok");
@@ -1783,6 +1734,7 @@ function cleanUnusedItems() {
         transactions = cloud.cloudTx || [];
         rebuildCategorySetFromTransactions();
         updateCategoryDatalist();
+        cleanUnusedItems();      // ✅ clean after pull
         saveToLocalCache();
         renderOpeningTable();
         refreshFiltersUI();
@@ -1802,6 +1754,7 @@ function cleanUnusedItems() {
   cloudPushBtn.addEventListener("click", async () => {
     if (!confirm("Upload LOCAL data to Cloud? This will REPLACE cloud data.")) return;
     try {
+      cleanUnusedItems(); // ✅ clean before push
       await cloudPushAllLocalToCloud(true);
       showStatus("✓ Local uploaded to Cloud", "ok");
     } catch (e) {
@@ -1813,18 +1766,19 @@ function cleanUnusedItems() {
   /***********************
    * STARTUP
    ***********************/
-  function applyReportPresetStartup() {
-    applyReportPreset();
-  }
+  function applyReportPresetStartup() { applyReportPreset(); }
 
   async function initPage() {
     setTodayDefault();
     setupFormButtons();
 
-    await initialSyncStrategy();  // loads local, then cloud, then decides
+    await initialSyncStrategy();
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+
+    cleanUnusedItems(); // ✅ BEST PLACE (after sync, before UI)
+
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
@@ -1833,7 +1787,6 @@ function cleanUnusedItems() {
     applyReportPresetStartup();
   }
 
-  // Login
   loginBtn.addEventListener("click", async () => {
     const u = loginUser.value.trim();
     const p = loginPass.value;
@@ -1846,7 +1799,6 @@ function cleanUnusedItems() {
       loginMsg.textContent = "Unauthorized login. Access denied.";
     }
   });
-
 </script>
 </body>
 </html>
