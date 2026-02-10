@@ -223,19 +223,50 @@
     .status-bad { border-color:#dc2626; background:#fef2f2; }
 
     @media (max-width: 768px) {
-      body { padding: 6px; }
-      .card { padding: 12px; margin-bottom: 12px; }
-      h1 { font-size: 20px; }
-      h2 { font-size: 18px; }
-      table { font-size: 12px; }
-      th, td { padding: 5px 6px; }
-      .btn { width: 100%; text-align: center; margin-bottom: 4px; }
-      .chart-container { height: 220px; }
-    }
-    @media (max-width: 480px) {
-      .flex-row { flex-direction: column; }
-      .flex-item { min-width: 100%; }
-    }
+  body { padding: 6px; }
+  .card { padding: 12px; margin-bottom: 12px; }
+  h1 { font-size: 20px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+  h4 { font-size: 15px; }
+
+  /* Tables */
+  table { font-size: 12px; display:block; overflow-x:auto; -webkit-overflow-scrolling: touch; }
+  th, td { padding: 6px 7px; }
+
+  /* ✅ Forms: better mobile typing */
+  label { font-size: 13px; margin-bottom: 6px; }
+  input, select {
+    font-size: 16px;              /* prevents iOS zoom */
+    padding: 11px 12px;           /* bigger tap area */
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+
+  /* ✅ Make each row clean and stacked */
+  .flex-row { gap: 10px; }
+  .flex-item { flex: 1 1 100%; min-width: 100%; }
+
+  /* ✅ Buttons: keep full width only in forms */
+  .btn-group .btn { width: 100%; text-align: center; margin: 6px 0 0 0; }
+  .btn { margin-right: 0; }
+
+  /* ✅ Reports area: give breathing space */
+  #reportArea { padding-top: 6px; }
+  #reportSummary { font-size: 13px; line-height: 1.5; }
+
+  /* Charts */
+  .chart-container { height: 240px; }
+}
+
+/* Extra small phones */
+@media (max-width: 420px) {
+  .card { padding: 10px; }
+  input, select { padding: 12px; }
+  .metric-value { font-size: 17px; }
+}
+
   </style>
 </head>
 
