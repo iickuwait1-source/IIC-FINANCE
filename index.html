@@ -58,6 +58,9 @@
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
     }
 
+    /* ✅ Tag cards that are form-heavy (mobile improvements apply to these only) */
+    .form-card {}
+
     #app { display: none; }
 
     label {
@@ -222,51 +225,49 @@
     .status-warn { border-color:#f59e0b; background:#fffbeb; }
     .status-bad { border-color:#dc2626; background:#fef2f2; }
 
+    /* ✅ Mobile improvements ONLY for .form-card (New Entry + Report + Person Money Entry) */
     @media (max-width: 768px) {
-  body { padding: 6px; }
-  .card { padding: 12px; margin-bottom: 12px; }
-  h1 { font-size: 20px; }
-  h2 { font-size: 18px; }
-  h3 { font-size: 16px; }
-  h4 { font-size: 15px; }
+      body { padding: 6px; }
+      .card { padding: 12px; margin-bottom: 12px; }
+      h1 { font-size: 20px; }
+      h2 { font-size: 18px; }
+      h3 { font-size: 16px; }
+      h4 { font-size: 15px; }
 
-  /* Tables */
-  table { font-size: 12px; display:block; overflow-x:auto; -webkit-overflow-scrolling: touch; }
-  th, td { padding: 6px 7px; }
+      /* Tables */
+      table { font-size: 12px; display:block; overflow-x:auto; -webkit-overflow-scrolling: touch; }
+      th, td { padding: 6px 7px; }
 
-  /* ✅ Forms: better mobile typing */
-  label { font-size: 13px; margin-bottom: 6px; }
-  input, select {
-    font-size: 16px;              /* prevents iOS zoom */
-    padding: 11px 12px;           /* bigger tap area */
-    margin-bottom: 10px;
-    border-radius: 10px;
-    background: #ffffff;
-  }
+      /* ✅ Forms: bigger tap area */
+      .form-card label { font-size: 13px; margin-bottom: 6px; }
+      .form-card input, .form-card select {
+        font-size: 16px;              /* prevents iOS zoom */
+        padding: 11px 12px;           /* bigger tap area */
+        margin-bottom: 10px;
+        border-radius: 10px;
+        background: #ffffff;
+      }
 
-  /* ✅ Make each row clean and stacked */
-  .flex-row { gap: 10px; }
-  .flex-item { flex: 1 1 100%; min-width: 100%; }
+      /* ✅ Make each row stacked inside forms */
+      .form-card .flex-item { flex: 1 1 100%; min-width: 100%; }
 
-  /* ✅ Buttons: keep full width only in forms */
-  .btn-group .btn { width: 100%; text-align: center; margin: 6px 0 0 0; }
-  .btn { margin-right: 0; }
+      /* ✅ Buttons full width ONLY inside forms */
+      .form-card .btn-group .btn { width: 100%; text-align: center; margin: 6px 0 0 0; }
+      .form-card .btn { margin-right: 0; }
 
-  /* ✅ Reports area: give breathing space */
-  #reportArea { padding-top: 6px; }
-  #reportSummary { font-size: 13px; line-height: 1.5; }
+      /* ✅ Reports breathing space */
+      #reportArea { padding-top: 6px; }
+      #reportSummary { font-size: 13px; line-height: 1.5; }
 
-  /* Charts */
-  .chart-container { height: 240px; }
-}
+      /* Charts */
+      .chart-container { height: 240px; }
+    }
 
-/* Extra small phones */
-@media (max-width: 420px) {
-  .card { padding: 10px; }
-  input, select { padding: 12px; }
-  .metric-value { font-size: 17px; }
-}
-
+    @media (max-width: 420px) {
+      .card { padding: 10px; }
+      .form-card input, .form-card select { padding: 12px; }
+      .metric-value { font-size: 17px; }
+    }
   </style>
 </head>
 
@@ -369,26 +370,26 @@
       <div class="dashboard-grid dashboard-5 mt-10" id="dashItemsGrid"></div>
     </div>
 
-    <!-- ✅ NEW: Person Balance Dashboard (does NOT affect existing calculations) -->
+    <!-- ✅ NEW: Personal Money Dashboard (SEPARATE DATA, does NOT touch Transactions/Openings) -->
     <div class="card">
-      <h2>Person Balance Dashboard</h2>
+      <h2>Personal Money Dashboard</h2>
       <div class="small mt-5">
-        Track balances by person (who holds/spent). Choose a Title/Pool to filter (example: Zakat / Working Fund / Project).
+        Track money held by persons (received / spent). This is separate from the main finance transactions.
       </div>
 
       <div class="flex-row mt-10">
         <div class="flex-item">
-          <label for="personPoolFilter">Title / Pool</label>
-          <select id="personPoolFilter">
+          <label for="pmTitleFilter">Title / Pool</label>
+          <select id="pmTitleFilter">
             <option value="__all__">All Titles</option>
           </select>
         </div>
         <div class="flex-item" style="display:flex;align-items:flex-end;">
-          <button class="btn btn-secondary" id="personPoolClearBtn">Clear</button>
+          <button class="btn btn-secondary" id="pmClearBtn">Clear</button>
         </div>
       </div>
 
-      <div class="dashboard-grid dashboard-5 mt-10" id="personBalanceGrid"></div>
+      <div class="dashboard-grid dashboard-5 mt-10" id="pmBalanceGrid"></div>
     </div>
 
     <!-- Opening balances -->
@@ -413,8 +414,93 @@
       </table>
     </div>
 
-    <!-- New entry -->
+    <!-- ✅ Personal Money Entry Form (SEPARATE) -->
+    <div class="card form-card">
+      <h2>Personal Money Entry (Received / Spent)</h2>
+      <div class="small mt-5">Use this when money is held by a person and you want to track balance in hand.</div>
+
+      <div class="flex-row mt-10">
+        <div class="flex-item">
+          <label for="pmDate">Date</label>
+          <input type="date" id="pmDate">
+        </div>
+        <div class="flex-item">
+          <label for="pmTitle">Title / Pool</label>
+          <input type="text" id="pmTitle" placeholder="Example: Zakat / Working Fund / Project">
+        </div>
+        <div class="flex-item">
+          <label for="pmPerson">Person</label>
+          <input list="pmPeopleList" id="pmPerson" placeholder="Example: Person 1 / Sahad / Ahmed">
+          <datalist id="pmPeopleList"></datalist>
+        </div>
+      </div>
+
+      <div class="flex-row">
+        <div class="flex-item">
+          <label for="pmType">Entry Type</label>
+          <select id="pmType">
+            <option value="received">Received (adds to person balance)</option>
+            <option value="spent">Spent (deducts from person balance)</option>
+          </select>
+        </div>
+        <div class="flex-item">
+          <label for="pmAmount">Amount (KD)</label>
+          <input type="number" id="pmAmount" step="0.001" min="0" placeholder="0.000">
+        </div>
+        <div class="flex-item">
+          <label for="pmNote">Note (optional)</label>
+          <input type="text" id="pmNote" placeholder="Invoice / reason / any note">
+        </div>
+      </div>
+
+      <div class="mt-10">
+        <div class="btn-group" id="pmFormButtons">
+          <button class="btn btn-success" id="pmAddBtn">+ Add Personal Entry</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ Personal Money Entries Table (SEPARATE) -->
     <div class="card">
+      <h2>Personal Money Entries</h2>
+
+      <div class="flex-row mt-10">
+        <div class="flex-item">
+          <label for="pmSearch">Search</label>
+          <input id="pmSearch" type="text" placeholder="Search title, person, note...">
+        </div>
+        <div class="flex-item">
+          <label for="pmTitleFilter2">Title Filter</label>
+          <select id="pmTitleFilter2">
+            <option value="__all__">All Titles</option>
+          </select>
+        </div>
+        <div class="flex-item" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-secondary" id="pmClearFiltersBtn">Clear</button>
+        </div>
+      </div>
+
+      <div class="small" id="pmFilterMeta"></div>
+
+      <table id="pmTable">
+        <thead>
+        <tr>
+          <th>Sr. No</th>
+          <th>Date</th>
+          <th>Title</th>
+          <th>Person</th>
+          <th>Type</th>
+          <th class="text-right">Amount (KD)</th>
+          <th>Note</th>
+          <th>Action</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- New entry -->
+    <div class="card form-card">
       <h2>New Entry / Edit Entry</h2>
       <div class="flex-row mt-10">
         <div class="flex-item">
@@ -452,7 +538,7 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: Title/Pool + Person (Optional fields; old data remains same) -->
+      <!-- (Your optional fields kept as-is; does NOT affect old data) -->
       <div class="flex-row">
         <div class="flex-item">
           <label for="txPoolTitle">Title / Pool (optional)</label>
@@ -545,7 +631,7 @@
     </div>
 
     <!-- Report -->
-    <div class="card">
+    <div class="card form-card">
       <h2>Report</h2>
 
       <div class="flex-row mt-10">
@@ -698,10 +784,13 @@
   const fbApp = initializeApp(firebaseConfig);
   const db = getFirestore(fbApp);
 
-  // Firestore paths
+  // Firestore paths (EXISTING)
   const DOC_STATE = doc(db, "finance", "state");
   const DOC_LAST_REPORT = doc(db, "finance", "lastReport");
   const COL_TX = collection(db, "transactions");
+
+  // ✅ NEW Firestore collection (SEPARATE, safe)
+  const COL_PM = collection(db, "personLedger");
 
   /***********************
    * LOGIN
@@ -709,10 +798,14 @@
   const VALID_USER = "sahad";
   const VALID_PASS = "sa&4Er6A@Q";
 
+  // (EXISTING localStorage keys — unchanged)
   const LS_OPENING = "iic_fin_opening";
   const LS_TX = "iic_fin_transactions";
   const LS_LAST_REPORT = "iic_fin_last_report";
   const LS_CATEGORIES = "iic_fin_categories";
+
+  // ✅ NEW localStorage key (SEPARATE, safe)
+  const LS_PM = "iic_fin_person_money";
 
   let openingBalances = {
     "Working Fund": { opening: 0, current: 0 },
@@ -722,6 +815,10 @@
   let transactions = [];
   let categorySet = new Set();
   let editingIndex = null;
+
+  // ✅ NEW: personal money dataset (separate)
+  let personLedger = [];
+  let pmEditingIndex = null;
 
   let pieChartInstance = null;
   let lastReport = null;
@@ -753,7 +850,7 @@
   const txRemarks = document.getElementById("txRemarks");
   const formButtons = document.getElementById("formButtons");
 
-  // ✅ NEW fields DOM
+  // Optional fields kept
   const txPoolTitle = document.getElementById("txPoolTitle");
   const txPerson = document.getElementById("txPerson");
   const peopleList = document.getElementById("peopleList");
@@ -792,10 +889,25 @@
   const dashZakatNet = document.getElementById("dashZakatNet");
   const dashItemsGrid = document.getElementById("dashItemsGrid");
 
-  // ✅ NEW: Person dashboard DOM
-  const personPoolFilter = document.getElementById("personPoolFilter");
-  const personPoolClearBtn = document.getElementById("personPoolClearBtn");
-  const personBalanceGrid = document.getElementById("personBalanceGrid");
+  // ✅ NEW: Personal Money Dashboard + Form + Table DOM
+  const pmTitleFilter = document.getElementById("pmTitleFilter");
+  const pmClearBtn = document.getElementById("pmClearBtn");
+  const pmBalanceGrid = document.getElementById("pmBalanceGrid");
+
+  const pmDate = document.getElementById("pmDate");
+  const pmTitle = document.getElementById("pmTitle");
+  const pmPerson = document.getElementById("pmPerson");
+  const pmPeopleList = document.getElementById("pmPeopleList");
+  const pmType = document.getElementById("pmType");
+  const pmAmount = document.getElementById("pmAmount");
+  const pmNote = document.getElementById("pmNote");
+  const pmFormButtons = document.getElementById("pmFormButtons");
+
+  const pmSearch = document.getElementById("pmSearch");
+  const pmTitleFilter2 = document.getElementById("pmTitleFilter2");
+  const pmClearFiltersBtn = document.getElementById("pmClearFiltersBtn");
+  const pmFilterMeta = document.getElementById("pmFilterMeta");
+  const pmTableBody = document.querySelector("#pmTable tbody");
 
   // Backup/Restore DOM
   const backupBtn = document.getElementById("backupBtn");
@@ -917,60 +1029,79 @@
   }
 
   /***********************
-   * ✅ PERSON DASHBOARD (NEW, SAFE)
+   * ✅ PERSONAL MONEY (SEPARATE)
    ***********************/
-  function getAllTitlesFromTx() {
-    return uniqueSorted(transactions.map(t => valOrEmpty(t.poolTitle))).filter(Boolean);
+  function pmEffect(e) {
+    const amt = n3(e.amount);
+    if (e.type === "received") return +amt;
+    if (e.type === "spent") return -amt;
+    return 0;
   }
 
-  function getAllPeopleFromTx() {
-    return uniqueSorted(transactions.map(t => valOrEmpty(t.person))).filter(Boolean);
+  function getPMTitles() {
+    return uniqueSorted(personLedger.map(x => valOrEmpty(x.title))).filter(Boolean);
   }
 
-  function updatePeopleDatalist() {
-    if (!peopleList) return;
-    peopleList.innerHTML = "";
-    getAllPeopleFromTx().forEach(p => {
+  function getPMPeople() {
+    return uniqueSorted(personLedger.map(x => valOrEmpty(x.person))).filter(Boolean);
+  }
+
+  function updatePMPeopleDatalist() {
+    pmPeopleList.innerHTML = "";
+    getPMPeople().forEach(p => {
       const opt = document.createElement("option");
       opt.value = p;
-      peopleList.appendChild(opt);
+      pmPeopleList.appendChild(opt);
     });
   }
 
-  function computePersonBalances(selectedTitle) {
+  function refreshPMFiltersUI() {
+    const titles = getPMTitles();
+
+    const cur1 = pmTitleFilter.value || "__all__";
+    pmTitleFilter.innerHTML = `<option value="__all__">All Titles</option>` +
+      titles.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    if (["__all__", ...titles].includes(cur1)) pmTitleFilter.value = cur1;
+
+    const cur2 = pmTitleFilter2.value || "__all__";
+    pmTitleFilter2.innerHTML = `<option value="__all__">All Titles</option>` +
+      titles.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+    if (["__all__", ...titles].includes(cur2)) pmTitleFilter2.value = cur2;
+
+    updatePMPeopleDatalist();
+  }
+
+  function computePMBalances(selectedTitle) {
     const out = {};
-    transactions.forEach(t => {
-      const person = valOrEmpty(t.person);
-      if (!person) return; // old tx without person won't affect
-      const title = valOrEmpty(t.poolTitle);
+    personLedger.forEach(e => {
+      const person = valOrEmpty(e.person);
+      if (!person) return;
+      const title = valOrEmpty(e.title);
 
       if (selectedTitle && selectedTitle !== "__all__") {
         if (title !== selectedTitle) return;
       }
 
-      const eff = netEffect(t);
-      out[person] = (out[person] || 0) + eff;
+      out[person] = (out[person] || 0) + pmEffect(e);
     });
     return out;
   }
 
-  function renderPersonBalances() {
-    if (!personBalanceGrid) return;
-
-    const selectedTitle = personPoolFilter ? (personPoolFilter.value || "__all__") : "__all__";
-    const balances = computePersonBalances(selectedTitle);
-
-    personBalanceGrid.innerHTML = "";
+  function renderPMDashboard() {
+    const sel = pmTitleFilter.value || "__all__";
+    const balances = computePMBalances(sel);
     const people = Object.keys(balances).sort((a,b)=>a.localeCompare(b));
+
+    pmBalanceGrid.innerHTML = "";
 
     if (people.length === 0) {
       const card = document.createElement("div");
       card.className = "metric-card";
       card.innerHTML = `
-        <div class="metric-label">No person data yet</div>
-        <div class="metric-value">Add entries with Person selected</div>
+        <div class="metric-label">No personal money data yet</div>
+        <div class="metric-value">Add Personal Money Entry</div>
       `;
-      personBalanceGrid.appendChild(card);
+      pmBalanceGrid.appendChild(card);
       return;
     }
 
@@ -981,29 +1112,256 @@
         <div class="metric-label">${escapeHtml(p)}</div>
         <div class="metric-value">${fmtKD(balances[p])}</div>
       `;
-      personBalanceGrid.appendChild(card);
+      pmBalanceGrid.appendChild(card);
     });
   }
 
-  function refreshPersonDashboardUI() {
-    if (personPoolFilter) {
-      const titles = getAllTitlesFromTx();
-      const cur = personPoolFilter.value || "__all__";
-      personPoolFilter.innerHTML =
-        `<option value="__all__">All Titles</option>` +
-        titles.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
-      if (["__all__", ...titles].includes(cur)) personPoolFilter.value = cur;
-    }
+  function getPMFilteredView() {
+    const q = normalize(pmSearch.value).trim();
+    const t = pmTitleFilter2.value || "__all__";
 
-    updatePeopleDatalist();
-    renderPersonBalances();
+    const out = [];
+    personLedger.forEach((e, idx) => {
+      if (t !== "__all__" && String(e.title || "") !== t) return;
+
+      if (q) {
+        const hay = [e.date, e.title, e.person, e.type, e.note].map(normalize).join(" ");
+        if (!hay.includes(q)) return;
+      }
+
+      out.push({ idx, e });
+    });
+
+    return out;
   }
 
-  if (personPoolFilter) personPoolFilter.addEventListener("change", renderPersonBalances);
-  if (personPoolClearBtn) personPoolClearBtn.addEventListener("click", () => {
-    if (personPoolFilter) personPoolFilter.value = "__all__";
-    renderPersonBalances();
+  function pmTypeLabel(x) {
+    if (x === "received") return "Received";
+    if (x === "spent") return "Spent";
+    return x || "";
+  }
+
+  function renderPMTable() {
+    pmTableBody.innerHTML = "";
+    const view = getPMFilteredView();
+    pmFilterMeta.textContent = `Showing ${view.length} of ${personLedger.length} personal entries`;
+
+    view.forEach((row, displayIndex) => {
+      const { idx, e } = row;
+      const tr = document.createElement("tr");
+      const sign = (e.type === "spent") ? "-" : "";
+      tr.innerHTML = `
+        <td>${displayIndex + 1}</td>
+        <td>${escapeHtml(e.date || "")}</td>
+        <td>${escapeHtml(e.title || "")}</td>
+        <td>${escapeHtml(e.person || "")}</td>
+        <td>${escapeHtml(pmTypeLabel(e.type))}</td>
+        <td class="text-right">${sign}${n3(e.amount).toFixed(3)}</td>
+        <td>${escapeHtml(e.note || "")}</td>
+        <td>
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-right:6px;" data-pm-edit="${idx}">Edit</button>
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" data-pm-del="${idx}">Delete</button>
+        </td>
+      `;
+      pmTableBody.appendChild(tr);
+    });
+
+    pmTableBody.querySelectorAll("[data-pm-edit]").forEach(btn => {
+      btn.addEventListener("click", () => pmEnterEditMode(Number(btn.dataset.pmEdit)));
+    });
+    pmTableBody.querySelectorAll("[data-pm-del]").forEach(btn => {
+      btn.addEventListener("click", () => pmDeleteEntry(Number(btn.dataset.pmDel)));
+    });
+  }
+
+  function pmSetTodayDefault() {
+    const today = new Date().toISOString().substring(0, 10);
+    if (!pmDate.value) pmDate.value = today;
+  }
+
+  function pmSetupButtons() {
+    pmFormButtons.innerHTML = `<button class="btn btn-success" id="pmAddBtn">+ Add Personal Entry</button>`;
+    document.getElementById("pmAddBtn").addEventListener("click", pmHandleAddEdit);
+  }
+
+  function pmClearForm() {
+    const today = new Date().toISOString().substring(0, 10);
+    pmDate.value = today;
+    pmTitle.value = "";
+    pmPerson.value = "";
+    pmType.value = "received";
+    pmAmount.value = "";
+    pmNote.value = "";
+    pmEditingIndex = null;
+  }
+
+  function pmEnterEditMode(idx) {
+    pmEditingIndex = idx;
+    const e = personLedger[idx];
+    pmDate.value = e.date || "";
+    pmTitle.value = e.title || "";
+    pmPerson.value = e.person || "";
+    pmType.value = e.type || "received";
+    pmAmount.value = n3(e.amount);
+    pmNote.value = e.note || "";
+
+    pmFormButtons.innerHTML = `
+      <button class="btn btn-success" id="pmSaveBtn">Save Personal Entry</button>
+      <button class="btn btn-secondary" id="pmCancelBtn">Cancel</button>
+    `;
+    document.getElementById("pmSaveBtn").addEventListener("click", pmHandleAddEdit);
+    document.getElementById("pmCancelBtn").addEventListener("click", () => {
+      pmEditingIndex = null;
+      pmClearForm();
+      pmSetupButtons();
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function pmMakeId() {
+    return personLedger.length ? (Math.max(...personLedger.map(x => Number(x.id || 0))) + 1) : 1;
+  }
+
+  async function pmCloudUpsert(e) {
+    // store in personLedger collection, separate from main transactions
+    if (e._docId) {
+      const copy = { ...e }; delete copy._docId;
+      await setDoc(doc(db, "personLedger", e._docId), copy, { merge: true });
+      return e._docId;
+    } else {
+      const copy = { ...e }; delete copy._docId;
+      const created = await addDoc(COL_PM, copy);
+      e._docId = created.id;
+      return created.id;
+    }
+  }
+
+  async function pmCloudDelete(docId) {
+    if (!docId) return;
+    await deleteDoc(doc(db, "personLedger", docId));
+  }
+
+  function pmSaveLocal() {
+    localStorage.setItem(LS_PM, JSON.stringify(personLedger.map(x => {
+      const c = { ...x }; delete c._docId; return c;
+    })));
+  }
+
+  function pmLoadLocal() {
+    try {
+      const raw = localStorage.getItem(LS_PM);
+      if (raw) personLedger = JSON.parse(raw).map(x => ({ ...x, _docId: null }));
+    } catch {}
+  }
+
+  async function pmLoadCloud() {
+    const snap = await getDocs(COL_PM);
+    const out = [];
+    snap.forEach(d => out.push({ _docId: d.id, ...d.data() }));
+    return out;
+  }
+
+  async function pmPushAllLocalToCloud() {
+    // wipe collection then upload local
+    const snap = await getDocs(COL_PM);
+    const batch = writeBatch(db);
+    snap.forEach(d => batch.delete(doc(db, "personLedger", d.id)));
+    await batch.commit();
+
+    for (const e of personLedger) {
+      e._docId = null;
+      await pmCloudUpsert(e);
+    }
+  }
+
+  function pmRefreshAllUI() {
+    refreshPMFiltersUI();
+    renderPMDashboard();
+    renderPMTable();
+  }
+
+  async function pmHandleAddEdit() {
+    const date = pmDate.value;
+    const title = pmTitle.value.trim();
+    const person = pmPerson.value.trim();
+    const type = pmType.value;
+    const amount = parseFloat(pmAmount.value);
+    const note = pmNote.value.trim();
+
+    if (!date || !title || !person || isNaN(amount) || amount <= 0) {
+      alert("Please enter Date, Title, Person and a positive Amount.");
+      return;
+    }
+
+    if (pmEditingIndex !== null) {
+      const old = personLedger[pmEditingIndex];
+      const upd = {
+        id: old.id,
+        _docId: old._docId || null,
+        date, title, person, type, amount, note
+      };
+      personLedger[pmEditingIndex] = upd;
+
+      try { await pmCloudUpsert(upd); }
+      catch (e) { console.error(e); showStatus("⚠ Personal entry cloud save failed. Local saved.", "warn"); }
+    } else {
+      const e = { id: pmMakeId(), _docId: null, date, title, person, type, amount, note };
+      personLedger.push(e);
+
+      try { await pmCloudUpsert(e); }
+      catch (er) { console.error(er); showStatus("⚠ Personal entry cloud save failed. Local saved.", "warn"); }
+    }
+
+    pmSaveLocal();
+    pmRefreshAllUI();
+
+    pmClearForm();
+    pmSetupButtons();
+    showStatus("✓ Personal money saved", "ok");
+  }
+
+  async function pmDeleteEntry(idx) {
+    const e = personLedger[idx];
+    if (!e) return;
+
+    const msg = `Delete personal entry?\n\n${e.date} | ${e.title} | ${e.person} | ${pmTypeLabel(e.type)} | ${n3(e.amount).toFixed(3)} KD`;
+    if (!confirm(msg)) return;
+
+    try { await pmCloudDelete(e._docId); }
+    catch (er) { console.error(er); showStatus("⚠ Personal entry cloud delete failed. Local removed.", "warn"); }
+
+    personLedger.splice(idx, 1);
+    pmSaveLocal();
+    pmRefreshAllUI();
+    showStatus("✓ Personal entry deleted", "ok");
+  }
+
+  pmTitleFilter.addEventListener("change", renderPMDashboard);
+  pmClearBtn.addEventListener("click", () => { pmTitleFilter.value = "__all__"; renderPMDashboard(); });
+
+  pmSearch.addEventListener("input", () => renderPMTable());
+  pmTitleFilter2.addEventListener("change", () => renderPMTable());
+  pmClearFiltersBtn.addEventListener("click", () => {
+    pmSearch.value = "";
+    pmTitleFilter2.value = "__all__";
+    renderPMTable();
   });
+
+  /***********************
+   * OPTIONAL PERSON FIELDS (inside main Tx) - kept
+   ***********************/
+  function getAllPeopleFromTx() {
+    return uniqueSorted(transactions.map(t => valOrEmpty(t.person))).filter(Boolean);
+  }
+  function updatePeopleDatalist() {
+    if (!peopleList) return;
+    peopleList.innerHTML = "";
+    getAllPeopleFromTx().forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p;
+      peopleList.appendChild(opt);
+    });
+  }
 
   /***********************
    * LOCAL STORAGE (CACHE)
@@ -1024,7 +1382,7 @@
 
   function saveToLocalCache() {
     try {
-      cleanUnusedItems(); // ✅ keep it clean before saving
+      cleanUnusedItems();
       localStorage.setItem(LS_OPENING, JSON.stringify(openingBalances));
       localStorage.setItem(LS_TX, JSON.stringify(transactions));
       localStorage.setItem(LS_CATEGORIES, JSON.stringify(Array.from(categorySet)));
@@ -1058,11 +1416,15 @@
     const lrSnap = await getDoc(DOC_LAST_REPORT);
     if (lrSnap.exists()) lastReport = lrSnap.data();
 
-    return { cloudHasState, cloudTxCount: cloudTx.length, cloudTx };
+    // ✅ personal ledger cloud (separate)
+    let cloudPM = [];
+    try { cloudPM = await pmLoadCloud(); } catch {}
+
+    return { cloudHasState, cloudTxCount: cloudTx.length, cloudTx, cloudPM };
   }
 
   async function cloudSaveState() {
-    cleanUnusedItems(); // ✅ keep cloud state clean too
+    cleanUnusedItems();
     await setDoc(DOC_STATE, {
       openingBalances,
       categories: Array.from(categorySet),
@@ -1107,7 +1469,11 @@
 
     if (lastReport) await setDoc(DOC_LAST_REPORT, lastReport, { merge: true });
 
+    // ✅ push personal ledger too
+    try { await pmPushAllLocalToCloud(); } catch {}
+
     saveToLocalCache();
+    pmSaveLocal();
   }
 
   /***********************
@@ -1115,6 +1481,7 @@
    ***********************/
   async function initialSyncStrategy() {
     loadFromLocalCache();
+    pmLoadLocal();
 
     let cloud = null;
     try {
@@ -1129,6 +1496,12 @@
     const localTxCount = Array.isArray(transactions) ? transactions.length : 0;
     const cloudTxCount = cloud.cloudTxCount;
 
+    // ✅ Personal ledger load (does not affect main flow)
+    if (Array.isArray(cloud.cloudPM) && cloud.cloudPM.length > 0) {
+      personLedger = cloud.cloudPM || [];
+      pmSaveLocal();
+    }
+
     if (cloudTxCount > 0 || cloud.cloudHasState) {
       transactions = cloud.cloudTx || [];
       if (!openingBalances || typeof openingBalances !== "object") {
@@ -1140,7 +1513,7 @@
       }
       rebuildCategorySetFromTransactions();
       updateCategoryDatalist();
-      cleanUnusedItems();      // ✅ clean after cloud load
+      cleanUnusedItems();
       saveToLocalCache();
       cloudInfo.textContent = `Cloud: loaded ${cloudTxCount} transactions.`;
       showStatus("✓ Cloud data loaded", "ok");
@@ -1323,7 +1696,7 @@
   }
 
   /***********************
-   * TRANSACTION EFFECTS
+   * TRANSACTION EFFECTS (EXISTING)
    ***********************/
   function applyTransactionEffect(header, type, amount) {
     ensureItemExists(header);
@@ -1356,7 +1729,7 @@
   }
 
   /***********************
-   * FORM (ADD / EDIT)
+   * FORM (ADD / EDIT) - EXISTING
    ***********************/
   function setupFormButtons() {
     formButtons.innerHTML = `<button class="btn btn-success" id="addTxBtn">+ Add Entry</button>`;
@@ -1411,6 +1784,7 @@
 
   async function persistAllAfterLocalChange() {
     saveToLocalCache();
+    pmSaveLocal();
     try {
       await cloudSaveState();
       showStatus("✓ Saved to Cloud", "ok");
@@ -1480,15 +1854,15 @@
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+    updatePeopleDatalist();
 
-    cleanUnusedItems(); // ✅ remove unused items after changes
+    cleanUnusedItems();
 
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
-    refreshPersonDashboardUI(); // ✅ update new dashboard
 
     await persistAllAfterLocalChange();
 
@@ -1497,7 +1871,7 @@
   }
 
   /***********************
-   * DELETE ENTRY
+   * DELETE ENTRY - EXISTING
    ***********************/
   async function deleteEntry(idx) {
     const t = transactions[idx];
@@ -1515,15 +1889,15 @@
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+    updatePeopleDatalist();
 
-    cleanUnusedItems(); // ✅ remove unused items after delete
+    cleanUnusedItems();
 
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
-    refreshPersonDashboardUI(); // ✅ update new dashboard
 
     await persistAllAfterLocalChange();
     showStatus("✓ Entry deleted", "ok");
@@ -1768,7 +2142,7 @@
   });
 
   /***********************
-   * BACKUP & RESTORE
+   * BACKUP & RESTORE (unchanged for main data)
    ***********************/
   function makeBackupObject() {
     return {
@@ -1827,7 +2201,8 @@
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
-    cleanUnusedItems(); // ✅ clean after restore
+    updatePeopleDatalist();
+    cleanUnusedItems();
     saveToLocalCache();
 
     renderOpeningTable();
@@ -1835,7 +2210,6 @@
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
-    refreshPersonDashboardUI(); // ✅ show person balances after restore
 
     showStatus("✓ Restore completed (local)", "ok");
     return true;
@@ -1916,17 +2290,35 @@
         transactions = cloud.cloudTx || [];
         rebuildCategorySetFromTransactions();
         updateCategoryDatalist();
-        cleanUnusedItems();      // ✅ clean after pull
+        updatePeopleDatalist();
+        cleanUnusedItems();
         saveToLocalCache();
+
+        // personal ledger
+        if (Array.isArray(cloud.cloudPM)) {
+          personLedger = cloud.cloudPM || [];
+          pmSaveLocal();
+        }
+
         renderOpeningTable();
         refreshFiltersUI();
         renderTransactionTable();
         updateTotals();
         updateDashboardTotals();
-        refreshPersonDashboardUI(); // ✅ show person balances after pull
+
+        pmRefreshAllUI();
+
         showStatus("✓ Loaded from Cloud", "ok");
       } else {
-        showStatus("ℹ Cloud is empty", "warn");
+        // still pull personal ledger if exists
+        if (Array.isArray(cloud.cloudPM) && cloud.cloudPM.length) {
+          personLedger = cloud.cloudPM || [];
+          pmSaveLocal();
+          pmRefreshAllUI();
+          showStatus("✓ Loaded personal money from Cloud", "ok");
+        } else {
+          showStatus("ℹ Cloud is empty", "warn");
+        }
       }
     } catch (e) {
       console.error(e);
@@ -1937,7 +2329,7 @@
   cloudPushBtn.addEventListener("click", async () => {
     if (!confirm("Upload LOCAL data to Cloud? This will REPLACE cloud data.")) return;
     try {
-      cleanUnusedItems(); // ✅ clean before push
+      cleanUnusedItems();
       await cloudPushAllLocalToCloud(true);
       showStatus("✓ Local uploaded to Cloud", "ok");
     } catch (e) {
@@ -1953,21 +2345,30 @@
 
   async function initPage() {
     setTodayDefault();
+    pmSetTodayDefault();
+
     setupFormButtons();
+    pmSetupButtons();
 
     await initialSyncStrategy();
 
     rebuildCategorySetFromTransactions();
     updateCategoryDatalist();
+    updatePeopleDatalist();
 
-    cleanUnusedItems(); // ✅ after sync, before UI
+    cleanUnusedItems();
 
     renderOpeningTable();
     refreshFiltersUI();
     renderTransactionTable();
     updateTotals();
     updateDashboardTotals();
-    refreshPersonDashboardUI(); // ✅ init person dashboard
+
+    // personal money
+    refreshPMFiltersUI();
+    renderPMDashboard();
+    renderPMTable();
+
     applyReportPresetStartup();
   }
 
