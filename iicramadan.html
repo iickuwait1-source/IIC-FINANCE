@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <title>Indian Islahi Center KWT 2026 Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Chart.js CDN [web:8] -->
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     :root {
       --bg: #0f172a;
@@ -18,15 +19,11 @@
       --text: #e5e7eb;
       --card-radius: 14px;
       --shadow-3d: 0 18px 30px rgba(15, 23, 42, 0.75);
+      --muted: #9ca3af;
+      --border: rgba(148, 163, 184, 0.35);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     body {
       background: radial-gradient(circle at top, #1e293b, #020617);
       min-height: 100vh;
@@ -47,11 +44,10 @@
       padding: 28px 22px;
       width: 100%;
       max-width: 420px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      border: 1px solid var(--border);
       position: relative;
       overflow: hidden;
     }
-
     .card::before {
       content: "";
       position: absolute;
@@ -62,75 +58,29 @@
       opacity: 0.7;
       pointer-events: none;
     }
+    .card-inner { position: relative; z-index: 1; }
 
-    .card-inner {
-      position: relative;
-      z-index: 1;
-    }
+    h1 { font-weight: 650; letter-spacing: 0.04em; font-size: 1.35rem; text-align: center; margin-bottom: 4px; }
+    .subtitle { text-align: center; font-size: 0.82rem; margin-bottom: 20px; color: var(--muted); }
 
-    h1, h2, h3 {
-      font-weight: 600;
-      letter-spacing: 0.04em;
+    label { font-size: 0.86rem; display: block; margin-bottom: 4px; color: #cbd5f5; }
+    input[type="text"], input[type="number"], input[type="password"], input[type="date"], select {
+      width: 100%; border: none; outline: none; padding: 10px 12px; font-size: 0.9rem; border-radius: 6px;
+      background: #020617; color: var(--text); border: 1px solid #1f2937;
     }
+    input::placeholder { color: #6b7280; }
 
-    h1 {
-      font-size: 1.35rem;
-      text-align: center;
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      text-align: center;
-      font-size: 0.82rem;
-      margin-bottom: 20px;
-      color: #9ca3af;
-    }
-
-    label {
-      font-size: 0.86rem;
-      display: block;
-      margin-bottom: 4px;
-      color: #cbd5f5;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="password"],
-    select {
-      width: 100%;
-      border: none;
-      outline: none;
-      padding: 10px 12px;
-      font-size: 0.9rem;
-      border-radius: 6px;
-      background: #020617;
-      color: var(--text);
-      border: 1px solid #1f2937;
-    }
-
-    input::placeholder {
-      color: #6b7280;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .col {
-      flex: 1;
-    }
+    .row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .col { flex: 1; }
 
     .btn {
       width: 100%;
-      border: none;
-      outline: none;
+      border: none; outline: none;
       padding: 11px 14px;
       border-radius: 999px;
       background: linear-gradient(135deg, var(--accent), var(--accent-soft));
       color: #0b1120;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.05em;
       font-size: 0.85rem;
       cursor: pointer;
@@ -138,24 +88,11 @@
       box-shadow: 0 10px 25px rgba(8, 47, 73, 0.65);
       transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
     }
+    .btn:hover { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 16px 30px rgba(8, 47, 73, 0.8); }
+    .btn:active { transform: translateY(0); box-shadow: 0 10px 18px rgba(8, 47, 73, 0.7); }
 
-    .btn:hover {
-      filter: brightness(1.07);
-      transform: translateY(-1px);
-      box-shadow: 0 16px 30px rgba(8, 47, 73, 0.8);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-      box-shadow: 0 10px 18px rgba(8, 47, 73, 0.7);
-    }
-
-    .error {
-      color: #fecaca;
-      font-size: 0.8rem;
-      margin-top: 6px;
-      min-height: 16px;
-    }
+    .error { color: #fecaca; font-size: 0.8rem; margin-top: 6px; min-height: 16px; }
+    .note { font-size: 0.76rem; color: var(--muted); margin-top: 8px; line-height: 1.4; }
 
     /* Layout after login */
     .layout {
@@ -166,7 +103,6 @@
       gap: 16px;
       align-items: flex-start;
     }
-
     @media (max-width: 960px) {
       body { padding: 12px 0; }
       .layout { grid-template-columns: 1fr; }
@@ -177,29 +113,13 @@
       border-radius: var(--card-radius);
       box-shadow: var(--shadow-3d);
       padding: 16px 14px 12px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      border: 1px solid var(--border);
       position: relative;
       overflow: hidden;
     }
-
-    .panel-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .panel-title {
-      font-size: 0.98rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #e5e7eb;
-    }
-
-    .panel-subtitle {
-      font-size: 0.75rem;
-      color: #9ca3af;
-    }
+    .panel-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+    .panel-title { font-size: 0.98rem; text-transform: uppercase; letter-spacing: 0.08em; color: #e5e7eb; font-weight: 700; }
+    .panel-subtitle { font-size: 0.75rem; color: var(--muted); }
 
     .badge {
       font-size: 0.7rem;
@@ -207,9 +127,10 @@
       border-radius: 999px;
       background: rgba(56, 189, 248, 0.2);
       color: #bae6fd;
+      border: 1px solid rgba(56,189,248,0.25);
     }
 
-    /* Form grid – no visual gaps inside */
+    /* Form grid */
     .form-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -218,157 +139,87 @@
       border: 1px solid #111827;
       box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
     }
-
-    .form-grid-header,
-    .form-grid-row {
-      display: contents;
-    }
-
-    .cell {
-      border: 1px solid #020617;
-      background: #020617;
-      padding: 0;
-    }
-
+    .form-grid-header, .form-grid-row { display: contents; }
+    .cell { border: 1px solid #020617; background: #020617; padding: 0; }
     .cell-header {
       background: linear-gradient(135deg, #1f2937, #111827);
       font-size: 0.78rem;
-      font-weight: 600;
+      font-weight: 700;
       text-align: center;
       padding: 6px 4px;
       color: #e5e7eb;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       border-bottom: 1px solid #020617;
+      white-space: nowrap;
     }
+    .cell input, .cell select { border-radius: 0; border: none; width: 100%; padding: 9px 8px; font-size: 0.85rem; background: transparent; }
+    .cell.readonly input { background: #020617; color: #9ca3af; cursor: default; }
 
-    .cell input,
-    .cell select {
-      border-radius: 0;
-      border: none;
-      width: 100%;
-      padding: 9px 8px;
-      font-size: 0.85rem;
-      background: transparent;
-    }
+    .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; margin: 10px 2px 6px; color: var(--muted); }
 
-    .cell.readonly input {
-      background: #020617;
-      color: #9ca3af;
-      cursor: default;
-    }
-
-    .unit-select {
-      background: #020617;
-    }
-
-    .section-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin: 10px 2px 6px;
-      color: #9ca3af;
-    }
-
-    .note {
-      font-size: 0.76rem;
-      color: #9ca3af;
-      margin-top: 8px;
-      line-height: 1.4;
-    }
-
-    /* Table / Dashboard */
+    /* Table (FIXED MOBILE) */
     .table-wrapper {
       margin-top: 4px;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid rgba(31, 41, 55, 0.9);
-      box-shadow:
-        inset 0 0 0 1px rgba(148, 163, 184, 0.08),
-        0 18px 30px rgba(15, 23, 42, 0.9);
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08), 0 18px 30px rgba(15, 23, 42, 0.9);
       background: linear-gradient(160deg, #020617, #020617 45%, #02061a 100%);
     }
 
+    /* THIS is the mobile fix: horizontal scroll + touch */
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      width: 100%;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.76rem;
       color: #e5e7eb;
+      min-width: 980px; /* ensures columns never crush on mobile */
     }
 
-    thead {
-      background: linear-gradient(135deg, #0f172a, #020617);
-    }
-
+    thead { background: linear-gradient(135deg, #0f172a, #020617); }
     thead th {
-      padding: 7px 4px;
+      padding: 7px 6px;
       text-align: center;
       border-bottom: 1px solid #020617;
       border-right: 1px solid #020617;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      font-weight: 600;
+      font-weight: 800;
       white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: linear-gradient(135deg, #0f172a, #020617);
     }
+    thead th:last-child { border-right: none; }
 
-    thead th:last-child {
-      border-right: none;
-    }
-
-    tbody tr {
-      background: linear-gradient(180deg, #020617, #020617);
-      transition: background 0.15s ease;
-    }
-
-    tbody tr:nth-child(even) {
-      background: linear-gradient(180deg, #020617, #020617);
-    }
-
+    tbody tr { background: linear-gradient(180deg, #020617, #020617); transition: background 0.15s ease; }
     tbody td {
-      padding: 6px 4px;
+      padding: 6px 6px;
       border-right: 1px solid #020617;
       border-bottom: 1px solid #020617;
       text-align: center;
+      white-space: nowrap;
     }
-
-    tbody tr:last-child td {
-      border-bottom: none;
-      font-weight: 600;
-      background: linear-gradient(135deg, #0f172a, #020617);
-    }
-
-    tbody td:first-child {
-      text-align: left;
-      padding-left: 8px;
-    }
+    tbody tr:last-child td { border-bottom: none; font-weight: 800; background: linear-gradient(135deg, #0f172a, #020617); }
+    tbody td:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; z-index: 1; background: #020617; }
+    thead th:first-child { left: 0; z-index: 3; position: sticky; }
 
     /* Status colours */
-    .status-full {
-      background: rgba(34, 197, 94, 0.22) !important;
-      color: #bbf7d0;
-    }
-
-    .status-80 {
-      background: rgba(74, 222, 128, 0.18) !important;
-      color: #bef264;
-    }
-
-    .status-low {
-      background: rgba(248, 113, 113, 0.25) !important;
-      color: #fecaca;
-    }
+    .status-full { background: rgba(34, 197, 94, 0.22) !important; color: #bbf7d0; }
+    .status-80  { background: rgba(74, 222, 128, 0.18) !important; color: #bef264; }
+    .status-low { background: rgba(248, 113, 113, 0.25) !important; color: #fecaca; }
 
     /* Charts */
-    .charts {
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 960px) {
-      .charts { grid-template-columns: 1fr; }
-    }
+    .charts { display: grid; grid-template-columns: 1.1fr 1fr; gap: 10px; margin-top: 10px; }
+    @media (max-width: 960px) { .charts { grid-template-columns: 1fr; } }
 
     .chart-card {
       background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 55%),
@@ -379,42 +230,79 @@
       padding: 8px 8px 4px;
       box-shadow: 0 14px 26px rgba(15, 23, 42, 0.9);
     }
+    .chart-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; color: #d1d5db; font-weight: 800; }
+    canvas { width: 100% !important; height: 210px !important; }
 
-    .chart-title {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 4px;
-      color: #d1d5db;
+    /* Progress section (NEW) */
+    .progress-wrap { margin-top: 12px; }
+    .progress-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: #cbd5f5; margin: 2px 2px 10px; font-weight: 800; }
+    .progress-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 960px) { .progress-list { grid-template-columns: 1fr; } }
+
+    .unit-card {
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: linear-gradient(180deg, rgba(2,6,23,0.9), rgba(2,6,26,0.85));
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.75);
+      padding: 10px 10px 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    .unit-card::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:
+        radial-gradient(circle at 0 0, rgba(56,189,248,0.10), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(34,197,94,0.06), transparent 55%);
+      opacity:.8;
+      pointer-events:none;
+    }
+    .unit-card-inner{ position:relative; z-index:1; }
+
+    .unit-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .unit-name { font-weight: 900; letter-spacing: 0.06em; font-size: 0.95rem; }
+    .unit-mini { font-size: 0.72rem; color: var(--muted); }
+
+    .metric { margin: 8px 0; }
+    .metric-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:6px; }
+    .metric-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #d1d5db; font-weight: 800; }
+    .metric-val { font-size: 0.75rem; color: #e5e7eb; font-weight: 800; white-space: nowrap; }
+
+    .bar {
+      height: 10px;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar > span {
+      display:block;
+      height:100%;
+      width:0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(56,189,248,0.95), rgba(14,165,233,0.75));
+      transition: width 0.25s ease;
+    }
+    .bar.green > span { background: linear-gradient(90deg, rgba(34,197,94,0.95), rgba(167,243,208,0.7)); }
+    .bar.orange > span { background: linear-gradient(90deg, rgba(249,115,22,0.95), rgba(251,191,36,0.7)); }
+    .bar.red > span { background: linear-gradient(90deg, rgba(248,113,113,0.95), rgba(252,165,165,0.7)); }
+
+    /* On small mobile, hide big table, show progress cards first */
+    @media (max-width: 560px) {
+      table { min-width: 980px; }
+      .charts { margin-top: 12px; }
     }
 
-    canvas {
-      width: 100% !important;
-      height: 210px !important;
-    }
-
-    .legend {
-      display: flex;
-      gap: 10px;
-      font-size: 0.7rem;
-      margin-top: 4px;
-      color: #9ca3af;
-      flex-wrap: wrap;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 4px;
-    }
-
+    .legend { display:flex; gap:10px; font-size:0.7rem; margin-top:4px; color: var(--muted); flex-wrap:wrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
     .dot-zakat { background: #38bdf8; }
-    .dot-target { background: #f97316; }
     .dot-daawa { background: #22c55e; }
+    .dot-iftar { background: #f97316; }
+    .dot-widow { background: #a78bfa; }
   </style>
 </head>
+
 <body>
 
 <!-- LOGIN VIEW -->
@@ -437,7 +325,7 @@
     <button class="btn" id="btn-login">Login</button>
     <div id="login-error" class="error"></div>
     <p class="note">
-      Use your allocated credentials to access the **dashboard**. Your data is stored in this browser using local storage so that entries remain between sessions on this device.
+      Data saves to <b>Firestore</b> when configured. If Firebase not configured, it falls back to <b>localStorage</b> on this device.
     </p>
   </div>
 </div>
@@ -451,7 +339,7 @@
         <div class="panel-title">Daily collection entry</div>
         <div class="panel-subtitle">Indian Islahi Center, KWT 2026</div>
       </div>
-      <span class="badge">Live</span>
+      <span class="badge" id="storage-badge">Local</span>
     </div>
 
     <div class="section-label">Unit & targets</div>
@@ -538,11 +426,12 @@
 
     <button class="btn" id="btn-update">Update dashboard</button>
     <p class="note">
-      Zakat &amp; Daawa **targets** control the colors: 100% or more = green, 80–99% = light green, below 50% = red. Difference equals target minus zakat for each unit.
+      Zakat row color uses target %: 100%+ green, 80–99% light green, below 50% red.
+      Progress cards show each unit with Zakat/Daawa as % (when targets exist) and other projects as relative bars.
     </p>
   </div>
 
-  <!-- Right: Table + charts -->
+  <!-- Right: Table + charts + progress -->
   <div class="panel">
     <div class="panel-header">
       <div>
@@ -553,63 +442,103 @@
     </div>
 
     <div class="table-wrapper">
-      <table id="data-table">
-        <thead>
-        <tr>
-          <th>Unit</th>
-          <th>Zakat</th>
-          <th>Target</th>
-          <th>Difference</th>
-          <th>Last Year</th>
-          <th>Daawa</th>
-          <th>Target</th>
-          <th>Iftar</th>
-          <th>Widow</th>
-          <th>Eid Pudava</th>
-          <th>Fitr Zakat</th>
-        </tr>
-        </thead>
-        <tbody>
-        <!-- Rows injected by JS -->
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="data-table">
+          <thead>
+          <tr>
+            <th>Unit</th>
+            <th>Zakat</th>
+            <th>Target</th>
+            <th>Difference</th>
+            <th>Last Year</th>
+            <th>Daawa</th>
+            <th>Target</th>
+            <th>Iftar</th>
+            <th>Widow</th>
+            <th>Eid Pudava</th>
+            <th>Fitr Zakat</th>
+          </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="charts">
       <div class="chart-card">
-        <div class="chart-title">Zakat vs target by unit</div>
+        <div class="chart-title">Zakat (actual) by unit</div>
         <canvas id="zakatChart"></canvas>
         <div class="legend">
           <span><span class="dot dot-zakat"></span>Zakat</span>
-          <span><span class="dot dot-target"></span>Target</span>
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Daawa progress</div>
+        <div class="chart-title">Daawa (actual) by unit</div>
         <canvas id="daawaChart"></canvas>
         <div class="legend">
           <span><span class="dot dot-daawa"></span>Daawa</span>
-          <span><span class="dot dot-target"></span>Target</span>
         </div>
       </div>
     </div>
+
+    <div class="progress-wrap">
+      <div class="progress-title">Progress (each unit)</div>
+      <div id="progress-list" class="progress-list"></div>
+      <p class="note" style="margin-top:10px;">
+        On projects without targets, bars are shown relative to the highest unit value (to keep mobile clear and comparable).
+      </p>
+    </div>
+
   </div>
 </div>
 
-<script>
+<!-- MAIN LOGIC (Firebase + UI) -->
+<script type="module">
+  // =========================
+  // 1) CONFIGURE FIREBASE HERE
+  // =========================
+  // If you don't set config, app uses localStorage only.
+  const firebaseConfig = {
+    apiKey: "PASTE",
+    authDomain: "PASTE",
+    projectId: "PASTE",
+    storageBucket: "PASTE",
+    messagingSenderId: "PASTE",
+    appId: "PASTE"
+  };
+
+  // Toggle: set true after you paste config and have Firestore enabled
+  const USE_FIREBASE = firebaseConfig.apiKey !== "PASTE";
+
+  let db = null;
+  let firebaseReady = false;
+
+  if (USE_FIREBASE) {
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
+      const {
+        getFirestore, doc, getDoc, setDoc, getDocs, collection
+      } = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
+
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+
+      firebaseReady = true;
+
+      // attach firestore functions to window for use below
+      window.__fs = { doc, getDoc, setDoc, getDocs, collection };
+      document.getElementById("storage-badge").textContent = "Cloud";
+    } catch (e) {
+      console.error("Firebase init failed, using localStorage fallback:", e);
+      firebaseReady = false;
+      document.getElementById("storage-badge").textContent = "Local";
+    }
+  } else {
+    document.getElementById("storage-badge").textContent = "Local";
+  }
+
   // --------- BASIC STATE ---------
-  const units = [
-    "FARWANIA",
-    "JALEEB",
-    "ABBASIYA",
-    "HASAWIYA",
-    "SALMIYA",
-    "HAWALLY",
-    "MAHBOULA",
-    "MANGAF",
-    "FAHAHEEL",
-    "OTHER"
-  ];
+  const units = ["FARWANIA","JALEEB","ABBASIYA","HASAWIYA","SALMIYA","HAWALLY","MAHBOULA","MANGAF","FAHAHEEL","OTHER"];
 
   const defaultRow = () => ({
     unit: "",
@@ -629,25 +558,48 @@
   units.forEach(u => data[u] = { ...defaultRow(), unit: u });
 
   const STORAGE_KEY = "islahi-center-2026";
+  const FS_COLLECTION = "iicRamadan2026"; // Firestore collection name
 
-  // --------- STORAGE HELPERS ---------
-  function loadState() {
+  // --------- STORAGE HELPERS (Local) ---------
+  function loadLocal() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved);
       if (parsed && typeof parsed === "object") {
-        units.forEach(u => {
-          if (parsed[u]) data[u] = { ...defaultRow(), ...parsed[u], unit: u };
-        });
+        units.forEach(u => { if (parsed[u]) data[u] = { ...defaultRow(), ...parsed[u], unit: u }; });
       }
+    } catch (e) { console.error("Failed to load local data", e); }
+  }
+  function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+  // --------- STORAGE HELPERS (Firestore) ---------
+  async function loadFromFirestore() {
+    if (!firebaseReady || !db) return false;
+    try {
+      const { getDocs, collection } = window.__fs;
+      const snap = await getDocs(collection(db, FS_COLLECTION));
+      snap.forEach(d => {
+        const u = d.id;
+        if (units.includes(u)) data[u] = { ...defaultRow(), ...d.data(), unit: u };
+      });
+      return true;
     } catch (e) {
-      console.error("Failed to load stored data", e);
+      console.error("Firestore load failed:", e);
+      return false;
     }
   }
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  async function saveUnitToFirestore(unit) {
+    if (!firebaseReady || !db) return false;
+    try {
+      const { doc, setDoc } = window.__fs;
+      await setDoc(doc(db, FS_COLLECTION, unit), data[unit], { merge: true });
+      return true;
+    } catch (e) {
+      console.error("Firestore save failed:", e);
+      return false;
+    }
   }
 
   // --------- LOGIN LOGIC ---------
@@ -655,22 +607,28 @@
   const mainView = document.getElementById("main-view");
   const loginError = document.getElementById("login-error");
 
-  document.getElementById("btn-login").addEventListener("click", () => {
+  document.getElementById("btn-login").addEventListener("click", async () => {
     const u = document.getElementById("login-username").value.trim();
     const p = document.getElementById("login-password").value.trim();
+
     if (u === "sahad" && p === "sa89ha98") {
       loginError.textContent = "";
       loginView.classList.add("hidden");
       mainView.classList.remove("hidden");
-      loadState();
+
+      // Load: Firestore first, fallback local
+      let loadedCloud = false;
+      if (firebaseReady) loadedCloud = await loadFromFirestore();
+      if (!loadedCloud) loadLocal();
+
       buildTable();
       updateCharts();
+      buildProgressCards();
     } else {
       loginError.textContent = "Invalid username or password.";
     }
   });
 
-  // Enter key submits login
   document.getElementById("login-password").addEventListener("keydown", e => {
     if (e.key === "Enter") document.getElementById("btn-login").click();
   });
@@ -701,6 +659,7 @@
   function buildTable() {
     tbody.innerHTML = "";
     let totals = defaultRow();
+
     units.forEach(unit => {
       const row = data[unit];
       const tr = document.createElement("tr");
@@ -719,27 +678,24 @@
         row.fitr.toFixed(3)
       ];
 
-      cells.forEach((val, index) => {
+      // Color by zakat progress only (same as your rule)
+      const z = row.zakat;
+      const t = row.targetZakat;
+      if (t > 0) {
+        const pct = (z / t) * 100;
+        if (pct >= 100) tr.classList.add("status-full");
+        else if (pct >= 80) tr.classList.add("status-80");
+        else if (pct < 50) tr.classList.add("status-low");
+      }
+
+      cells.forEach((val) => {
         const td = document.createElement("td");
         td.textContent = val;
         tr.appendChild(td);
-
-        // status colour for zakat target
-        if (index === 1 || index === 2 || index === 3) {
-          const z = row.zakat;
-          const t = row.targetZakat;
-          if (t > 0) {
-            const pct = (z / t) * 100;
-            if (pct >= 100) tr.classList.add("status-full");
-            else if (pct >= 80) tr.classList.add("status-80");
-            else if (pct < 50) tr.classList.add("status-low");
-          }
-        }
       });
 
       tbody.appendChild(tr);
 
-      // accumulate totals
       totals.zakat += row.zakat;
       totals.targetZakat += row.targetZakat;
       totals.difference += row.difference;
@@ -775,7 +731,7 @@
   }
 
   // --------- UPDATE BUTTON ---------
-  document.getElementById("btn-update").addEventListener("click", () => {
+  document.getElementById("btn-update").addEventListener("click", async () => {
     const unit = document.getElementById("unit").value;
     const row = data[unit] || defaultRow();
 
@@ -792,12 +748,113 @@
     row.fitr = numeric(document.getElementById("fitr").value);
 
     data[unit] = row;
-    saveState();
+
+    // Save to cloud if possible, else local
+    let savedCloud = false;
+    if (firebaseReady) savedCloud = await saveUnitToFirestore(unit);
+    if (!savedCloud) saveLocal();
+
     buildTable();
     updateCharts();
+    buildProgressCards();
   });
 
-  // --------- CHARTS ---------
+  // --------- PROGRESS CARDS (NEW) ---------
+  const progressList = document.getElementById("progress-list");
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function colorByPct(pct){
+    if (pct >= 100) return "green";
+    if (pct >= 80) return "orange";
+    if (pct > 0) return "red";
+    return "red";
+  }
+
+  function fmt(n){ return (Number(n) || 0).toFixed(3); }
+
+  function buildProgressCards() {
+    // For non-target projects, compare relative to max (so mobile bars look meaningful)
+    const maxIftar = Math.max(...units.map(u => data[u].iftar || 0));
+    const maxWidow = Math.max(...units.map(u => data[u].widow || 0));
+    const maxEid   = Math.max(...units.map(u => data[u].eid || 0));
+    const maxFitr  = Math.max(...units.map(u => data[u].fitr || 0));
+
+    progressList.innerHTML = "";
+
+    units.forEach(u => {
+      const r = data[u];
+
+      const card = document.createElement("div");
+      card.className = "unit-card";
+
+      const inner = document.createElement("div");
+      inner.className = "unit-card-inner";
+
+      const top = document.createElement("div");
+      top.className = "unit-top";
+      top.innerHTML = `
+        <div class="unit-name">${u}</div>
+        <div class="unit-mini">Last Year: ${fmt(r.lastYear)}</div>
+      `;
+
+      inner.appendChild(top);
+
+      // helper to add a metric row
+      const addMetric = (label, value, target, mode) => {
+        // mode: "target" => pct=value/target, "relative" => pct=value/target(max)
+        let pct = 0;
+        let caption = "";
+
+        if (mode === "target") {
+          if ((target || 0) > 0) {
+            pct = (value / target) * 100;
+            caption = `${fmt(value)} / ${fmt(target)} (${clamp(pct,0,999).toFixed(1)}%)`;
+          } else {
+            pct = 0;
+            caption = `${fmt(value)} (no target)`;
+          }
+        } else {
+          const denom = target || 0;
+          if (denom > 0) pct = (value / denom) * 100;
+          caption = `${fmt(value)} (relative)`;
+        }
+
+        pct = clamp(pct, 0, 120);
+
+        const metric = document.createElement("div");
+        metric.className = "metric";
+
+        const head = document.createElement("div");
+        head.className = "metric-head";
+        head.innerHTML = `<div class="metric-label">${label}</div><div class="metric-val">${caption}</div>`;
+
+        const bar = document.createElement("div");
+        const c = (mode === "target" && (target || 0) > 0) ? colorByPct((value/target)*100) : "orange";
+        bar.className = `bar ${c}`;
+        const fill = document.createElement("span");
+        fill.style.width = `${pct}%`;
+        bar.appendChild(fill);
+
+        metric.appendChild(head);
+        metric.appendChild(bar);
+        inner.appendChild(metric);
+      };
+
+      addMetric("Zakat", r.zakat, r.targetZakat, "target");
+      addMetric("Daawa", r.daawa, r.targetDaawa, "target");
+
+      addMetric("Iftar Project", r.iftar, maxIftar, "relative");
+      addMetric("Widow Project", r.widow, maxWidow, "relative");
+      addMetric("Eid Pudava", r.eid, maxEid, "relative");
+      addMetric("Fitr Zakat", r.fitr, maxFitr, "relative");
+
+      card.appendChild(inner);
+      progressList.appendChild(card);
+    });
+  }
+
+  // --------- CHARTS (ACTUAL ONLY) ---------
   let zakatChart, daawaChart;
 
   function initCharts() {
@@ -808,14 +865,9 @@
         labels: units,
         datasets: [
           {
-            label: "Zakat",
+            label: "Zakat (Actual)",
             data: units.map(u => data[u].zakat),
-            backgroundColor: "rgba(56, 189, 248, 0.8)"
-          },
-          {
-            label: "Target",
-            data: units.map(u => data[u].targetZakat),
-            backgroundColor: "rgba(249, 115, 22, 0.8)"
+            backgroundColor: "rgba(56, 189, 248, 0.85)"
           }
         ]
       },
@@ -826,38 +878,20 @@
           x: { ticks: { color: "#e5e7eb" }, grid: { display: false } },
           y: { ticks: { color: "#9ca3af" }, grid: { color: "rgba(55,65,81,0.6)" } }
         },
-        plugins: {
-          legend: {
-            labels: { color: "#e5e7eb", usePointStyle: true, boxWidth: 8 }
-          }
-        }
+        plugins: { legend: { labels: { color: "#e5e7eb", usePointStyle: true, boxWidth: 8 } } }
       }
     });
 
     const ctxDaawa = document.getElementById("daawaChart").getContext("2d");
     daawaChart = new Chart(ctxDaawa, {
-      type: "line",
+      type: "bar",
       data: {
         labels: units,
         datasets: [
           {
-            label: "Daawa",
+            label: "Daawa (Actual)",
             data: units.map(u => data[u].daawa),
-            borderColor: "rgba(34, 197, 94, 0.9)",
-            backgroundColor: "rgba(34, 197, 94, 0.3)",
-            tension: 0.35,
-            fill: true,
-            pointRadius: 3
-          },
-          {
-            label: "Target",
-            data: units.map(u => data[u].targetDaawa),
-            borderColor: "rgba(249, 115, 22, 0.9)",
-            backgroundColor: "rgba(249, 115, 22, 0.2)",
-            tension: 0.35,
-            fill: true,
-            borderDash: [5, 5],
-            pointRadius: 3
+            backgroundColor: "rgba(34, 197, 94, 0.85)"
           }
         ]
       },
@@ -868,26 +902,17 @@
           x: { ticks: { color: "#e5e7eb" }, grid: { display: false } },
           y: { ticks: { color: "#9ca3af" }, grid: { color: "rgba(55,65,81,0.6)" } }
         },
-        plugins: {
-          legend: {
-            labels: { color: "#e5e7eb", usePointStyle: true, boxWidth: 8 }
-          }
-        }
+        plugins: { legend: { labels: { color: "#e5e7eb", usePointStyle: true, boxWidth: 8 } } }
       }
     });
   }
 
   function updateCharts() {
-    if (!zakatChart || !daawaChart) {
-      initCharts();
-      return;
-    }
+    if (!zakatChart || !daawaChart) { initCharts(); return; }
     zakatChart.data.datasets[0].data = units.map(u => data[u].zakat);
-    zakatChart.data.datasets[1].data = units.map(u => data[u].targetZakat);
     zakatChart.update();
 
     daawaChart.data.datasets[0].data = units.map(u => data[u].daawa);
-    daawaChart.data.datasets[1].data = units.map(u => data[u].targetDaawa);
     daawaChart.update();
   }
 
