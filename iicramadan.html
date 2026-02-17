@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Indian Islahi Center KWT 2026 Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Chart.js CDN [web:8] -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-light: #1e293b;
+      --accent: #0ea5e9;
+      --accent-soft: #38bdf8;
+      --danger: #f97373;
+      --success: #22c55e;
+      --success-soft: #a7f3d0;
+      --text: #e5e7eb;
+      --card-radius: 14px;
+      --shadow-3d: 0 18px 30px rgba(15, 23, 42, 0.75);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1e293b, #020617);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Auth card */
+    .card {
+      background: linear-gradient(145deg, #020617, #020617 35%, #111827 100%);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow-3d);
+      padding: 28px 22px;
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.18), transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.12), transparent 55%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1, h2, h3 {
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.82rem;
+      margin-bottom: 20px;
+      color: #9ca3af;
+    }
+
+    label {
+      font-size: 0.86rem;
+      display: block;
+      margin-bottom: 4px;
+      color: #cbd5f5;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    select {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      background: #020617;
+      color: var(--text);
+      border: 1px solid #1f2937;
+    }
+
+    input::placeholder {
+      color: #6b7280;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .col {
+      flex: 1;
+    }
+
+    .btn {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 11px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color: #0b1120;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 8px;
+      box-shadow: 0 10px 25px rgba(8, 47, 73, 0.65);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+
+    .btn:hover {
+      filter: brightness(1.07);
+      transform: translateY(-1px);
+      box-shadow: 0 16px 30px rgba(8, 47, 73, 0.8);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 18px rgba(8, 47, 73, 0.7);
+    }
+
+    .error {
+      color: #fecaca;
+      font-size: 0.8rem;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    /* Layout after login */
+    .layout {
+      width: 100%;
+      max-width: 1240px;
+      display: grid;
+      grid-template-columns: 1.1fr 1.3fr;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 960px) {
+      body { padding: 12px 0; }
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: linear-gradient(145deg, #020617, #020617 35%, #02061a 100%);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow-3d);
+      padding: 16px 14px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      font-size: 0.98rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #e5e7eb;
+    }
+
+    .panel-subtitle {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.2);
+      color: #bae6fd;
+    }
+
+    /* Form grid – no visual gaps inside */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #111827;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
+    }
+
+    .form-grid-header,
+    .form-grid-row {
+      display: contents;
+    }
+
+    .cell {
+      border: 1px solid #020617;
+      background: #020617;
+      padding: 0;
+    }
+
+    .cell-header {
+      background: linear-gradient(135deg, #1f2937, #111827);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 6px 4px;
+      color: #e5e7eb;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #020617;
+    }
+
+    .cell input,
+    .cell select {
+      border-radius: 0;
+      border: none;
+      width: 100%;
+      padding: 9px 8px;
+      font-size: 0.85rem;
+      background: transparent;
+    }
+
+    .cell.readonly input {
+      background: #020617;
+      color: #9ca3af;
+      cursor: default;
+    }
+
+    .unit-select {
+      background: #020617;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin: 10px 2px 6px;
+      color: #9ca3af;
+    }
+
+    .note {
+      font-size: 0.76rem;
+      color: #9ca3af;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    /* Table / Dashboard */
+    .table-wrapper {
+      margin-top: 4px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      box-shadow:
+        inset 0 0 0 1px rgba(148, 163, 184, 0.08),
+        0 18px 30px rgba(15, 23, 42, 0.9);
+      background: linear-gradient(160deg, #020617, #020617 45%, #02061a 100%);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      color: #e5e7eb;
+    }
+
+    thead {
+      background: linear-gradient(135deg, #0f172a, #020617);
+    }
+
+    thead th {
+      padding: 7px 4px;
+      text-align: center;
+      border-bottom: 1px solid #020617;
+      border-right: 1px solid #020617;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    thead th:last-child {
+      border-right: none;
+    }
+
+    tbody tr {
+      background: linear-gradient(180deg, #020617, #020617);
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:nth-child(even) {
+      background: linear-gradient(180deg, #020617, #020617);
+    }
+
+    tbody td {
+      padding: 6px 4px;
+      border-right: 1px solid #020617;
+      border-bottom: 1px solid #020617;
+      text-align: center;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+      font-weight: 600;
+      background: linear-gradient(135deg, #0f172a, #020617);
+    }
+
+    tbody td:first-child {
+      text-align: left;
+      padding-left: 8px;
+    }
+
+    /* Status colours */
+    .status-full {
+      background: rgba(34, 197, 94, 0.22) !important;
+      color: #bbf7d0;
+    }
+
+    .status-80 {
+      background: rgba(74, 222, 128, 0.18) !important;
+      color: #bef264;
+    }
+
+    .status-low {
+      background: rgba(248, 113, 113, 0.25) !important;
+      color: #fecaca;
+    }
+
+    /* Charts */
+    .charts {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 960px) {
+      .charts { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 60%),
+                  #020617;
+      border-radius: 12px;
+      border: 1px solid rgba(30, 64, 175, 0.5);
+      padding: 8px 8px 4px;
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.9);
+    }
+
+    .chart-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      color: #d1d5db;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 210px !important;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      font-size: 0.7rem;
+      margin-top: 4px;
+      color: #9ca3af;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .dot-zakat { background: #38bdf8; }
+    .dot-target { background: #f97316; }
+    .dot-daawa { background: #22c55e; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN VIEW -->
+<div id="login-view" class="card">
+  <div class="card-inner">
+    <h1>Indian Islahi Center, KWT 2026</h1>
+    <p class="subtitle">Secure access • Daily collection dashboard</p>
+    <div class="row">
+      <div class="col">
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" placeholder="Enter username" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Enter password" />
+      </div>
+    </div>
+    <button class="btn" id="btn-login">Login</button>
+    <div id="login-error" class="error"></div>
+    <p class="note">
+      Use your allocated credentials to access the **dashboard**. Your data is stored in this browser using local storage so that entries remain between sessions on this device.
+    </p>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="main-view" class="layout hidden">
+  <!-- Left: Form panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Daily collection entry</div>
+        <div class="panel-subtitle">Indian Islahi Center, KWT 2026</div>
+      </div>
+      <span class="badge">Live</span>
+    </div>
+
+    <div class="section-label">Unit & targets</div>
+    <div class="form-grid">
+      <div class="form-grid-header">
+        <div class="cell cell-header">Unit</div>
+        <div class="cell cell-header">Zakat</div>
+        <div class="cell cell-header">Target (Zakat)</div>
+        <div class="cell cell-header">Difference</div>
+      </div>
+      <div class="form-grid-row">
+        <div class="cell">
+          <select id="unit" class="unit-select">
+            <option value="FARWANIA">FARWANIA</option>
+            <option value="JALEEB">JALEEB</option>
+            <option value="ABBASIYA">ABBASIYA</option>
+            <option value="HASAWIYA">HASAWIYA</option>
+            <option value="SALMIYA">SALMIYA</option>
+            <option value="HAWALLY">HAWALLY</option>
+            <option value="MAHBOULA">MAHBOULA</option>
+            <option value="MANGAF">MANGAF</option>
+            <option value="FAHAHEEL">FAHAHEEL</option>
+            <option value="OTHER">OTHER</option>
+          </select>
+        </div>
+        <div class="cell">
+          <input type="number" id="zakat" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell">
+          <input type="number" id="target-zakat" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell readonly">
+          <input type="text" id="difference-zakat" readonly placeholder="Auto" />
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Daawa & projects</div>
+    <div class="form-grid">
+      <div class="form-grid-header">
+        <div class="cell cell-header">Daawa</div>
+        <div class="cell cell-header">Target (Daawa)</div>
+        <div class="cell cell-header">Iftar</div>
+        <div class="cell cell-header">Widow</div>
+      </div>
+      <div class="form-grid-row">
+        <div class="cell">
+          <input type="number" id="daawa" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell">
+          <input type="number" id="target-daawa" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell">
+          <input type="number" id="iftar" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell">
+          <input type="number" id="widow" min="0" step="0.01" placeholder="0.000" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:10px;">
+      <div class="form-grid-header">
+        <div class="cell cell-header">Eid Pudava</div>
+        <div class="cell cell-header">Fitr Zakat</div>
+        <div class="cell cell-header">Date</div>
+        <div class="cell cell-header">Last Year (Zakat)</div>
+      </div>
+      <div class="form-grid-row">
+        <div class="cell">
+          <input type="number" id="eid" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell">
+          <input type="number" id="fitr" min="0" step="0.01" placeholder="0.000" />
+        </div>
+        <div class="cell">
+          <input type="date" id="date" />
+        </div>
+        <div class="cell">
+          <input type="number" id="last-year" min="0" step="0.01" placeholder="0.000" />
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="btn-update">Update dashboard</button>
+    <p class="note">
+      Zakat &amp; Daawa **targets** control the colors: 100% or more = green, 80–99% = light green, below 50% = red. Difference equals target minus zakat for each unit.
+    </p>
+  </div>
+
+  <!-- Right: Table + charts -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Units overview</div>
+        <div class="panel-subtitle">Live totals &amp; performance status</div>
+      </div>
+      <span class="badge" id="today-label">Today</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="data-table">
+        <thead>
+        <tr>
+          <th>Unit</th>
+          <th>Zakat</th>
+          <th>Target</th>
+          <th>Difference</th>
+          <th>Last Year</th>
+          <th>Daawa</th>
+          <th>Target</th>
+          <th>Iftar</th>
+          <th>Widow</th>
+          <th>Eid Pudava</th>
+          <th>Fitr Zakat</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <div class="chart-title">Zakat vs target by unit</div>
+        <canvas id="zakatChart"></canvas>
+        <div class="legend">
+          <span><span class="dot dot-zakat"></span>Zakat</span>
+          <span><span class="dot dot-target"></span>Target</span>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Daawa progress</div>
+        <canvas id="daawaChart"></canvas>
+        <div class="legend">
+          <span><span class="dot dot-daawa"></span>Daawa</span>
+          <span><span class="dot dot-target"></span>Target</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --------- BASIC STATE ---------
+  const units = [
+    "FARWANIA",
+    "JALEEB",
+    "ABBASIYA",
+    "HASAWIYA",
+    "SALMIYA",
+    "HAWALLY",
+    "MAHBOULA",
+    "MANGAF",
+    "FAHAHEEL",
+    "OTHER"
+  ];
+
+  const defaultRow = () => ({
+    unit: "",
+    zakat: 0,
+    targetZakat: 0,
+    difference: 0,
+    lastYear: 0,
+    daawa: 0,
+    targetDaawa: 0,
+    iftar: 0,
+    widow: 0,
+    eid: 0,
+    fitr: 0
+  });
+
+  let data = {};
+  units.forEach(u => data[u] = { ...defaultRow(), unit: u });
+
+  const STORAGE_KEY = "islahi-center-2026";
+
+  // --------- STORAGE HELPERS ---------
+  function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === "object") {
+        units.forEach(u => {
+          if (parsed[u]) data[u] = { ...defaultRow(), ...parsed[u], unit: u };
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load stored data", e);
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // --------- LOGIN LOGIC ---------
+  const loginView = document.getElementById("login-view");
+  const mainView = document.getElementById("main-view");
+  const loginError = document.getElementById("login-error");
+
+  document.getElementById("btn-login").addEventListener("click", () => {
+    const u = document.getElementById("login-username").value.trim();
+    const p = document.getElementById("login-password").value.trim();
+    if (u === "sahad" && p === "sa89ha98") {
+      loginError.textContent = "";
+      loginView.classList.add("hidden");
+      mainView.classList.remove("hidden");
+      loadState();
+      buildTable();
+      updateCharts();
+    } else {
+      loginError.textContent = "Invalid username or password.";
+    }
+  });
+
+  // Enter key submits login
+  document.getElementById("login-password").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("btn-login").click();
+  });
+
+  // --------- FORM HANDLING ---------
+  const zakatInput = document.getElementById("zakat");
+  const targetZakatInput = document.getElementById("target-zakat");
+  const differenceInput = document.getElementById("difference-zakat");
+
+  function numeric(value) {
+    const n = parseFloat(value);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function recalcDifference() {
+    const z = numeric(zakatInput.value);
+    const t = numeric(targetZakatInput.value);
+    const diff = t - z;
+    differenceInput.value = diff.toFixed(3);
+  }
+
+  zakatInput.addEventListener("input", recalcDifference);
+  targetZakatInput.addEventListener("input", recalcDifference);
+
+  // --------- TABLE RENDERING ---------
+  const tbody = document.querySelector("#data-table tbody");
+
+  function buildTable() {
+    tbody.innerHTML = "";
+    let totals = defaultRow();
+    units.forEach(unit => {
+      const row = data[unit];
+      const tr = document.createElement("tr");
+
+      const cells = [
+        row.unit,
+        row.zakat.toFixed(3),
+        row.targetZakat.toFixed(3),
+        row.difference.toFixed(3),
+        row.lastYear.toFixed(3),
+        row.daawa.toFixed(3),
+        row.targetDaawa.toFixed(3),
+        row.iftar.toFixed(3),
+        row.widow.toFixed(3),
+        row.eid.toFixed(3),
+        row.fitr.toFixed(3)
+      ];
+
+      cells.forEach((val, index) => {
+        const td = document.createElement("td");
+        td.textContent = val;
+        tr.appendChild(td);
+
+        // status colour for zakat target
+        if (index === 1 || index === 2 || index === 3) {
+          const z = row.zakat;
+          const t = row.targetZakat;
+          if (t > 0) {
+            const pct = (z / t) * 100;
+            if (pct >= 100) tr.classList.add("status-full");
+            else if (pct >= 80) tr.classList.add("status-80");
+            else if (pct < 50) tr.classList.add("status-low");
+          }
+        }
+      });
+
+      tbody.appendChild(tr);
+
+      // accumulate totals
+      totals.zakat += row.zakat;
+      totals.targetZakat += row.targetZakat;
+      totals.difference += row.difference;
+      totals.lastYear += row.lastYear;
+      totals.daawa += row.daawa;
+      totals.targetDaawa += row.targetDaawa;
+      totals.iftar += row.iftar;
+      totals.widow += row.widow;
+      totals.eid += row.eid;
+      totals.fitr += row.fitr;
+    });
+
+    const totalTr = document.createElement("tr");
+    const totalCells = [
+      "TOTAL",
+      totals.zakat.toFixed(3),
+      totals.targetZakat.toFixed(3),
+      totals.difference.toFixed(3),
+      totals.lastYear.toFixed(3),
+      totals.daawa.toFixed(3),
+      totals.targetDaawa.toFixed(3),
+      totals.iftar.toFixed(3),
+      totals.widow.toFixed(3),
+      totals.eid.toFixed(3),
+      totals.fitr.toFixed(3)
+    ];
+    totalCells.forEach(val => {
+      const td = document.createElement("td");
+      td.textContent = val;
+      totalTr.appendChild(td);
+    });
+    tbody.appendChild(totalTr);
+  }
+
+  // --------- UPDATE BUTTON ---------
+  document.getElementById("btn-update").addEventListener("click", () => {
+    const unit = document.getElementById("unit").value;
+    const row = data[unit] || defaultRow();
+
+    row.unit = unit;
+    row.zakat = numeric(document.getElementById("zakat").value);
+    row.targetZakat = numeric(document.getElementById("target-zakat").value);
+    row.difference = numeric(document.getElementById("difference-zakat").value);
+    row.lastYear = numeric(document.getElementById("last-year").value);
+    row.daawa = numeric(document.getElementById("daawa").value);
+    row.targetDaawa = numeric(document.getElementById("target-daawa").value);
+    row.iftar = numeric(document.getElementById("iftar").value);
+    row.widow = numeric(document.getElementById("widow").value);
+    row.eid = numeric(document.getElementById("eid").value);
+    row.fitr = numeric(document.getElementById("fitr").value);
+
+    data[unit] = row;
+    saveState();
+    buildTable();
+    updateCharts();
+  });
+
+  // --------- CHARTS ---------
+  let zakatChart, daawaChart;
+
+  function initCharts() {
+    const ctxZakat = document.getElementById("zakatChart").getContext("2d");
+    zakatChart = new Chart(ctxZakat, {
+      type: "bar",
+      data: {
+        labels: units,
+        datasets: [
+          {
+            label: "Zakat",
+            data: units.map(u => data[u].zakat),
+            backgroundColor: "rgba(56, 189, 248, 0.8)"
+          },
+          {
+            label: "Target",
+            data: units.map(u => data[u].targetZakat),
+            backgroundColor: "rgba(249, 115, 22, 0.8)"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: "#e5e7eb" }, grid: { display: false } },
+          y: { ticks: { color: "#9ca3af" }, grid: { color: "rgba(55,65,81,0.6)" } }
+        },
+        plugins: {
+          legend: {
+            labels: { color: "#e5e7eb", usePointStyle: true, boxWidth: 8 }
+          }
+        }
+      }
+    });
+
+    const ctxDaawa = document.getElementById("daawaChart").getContext("2d");
+    daawaChart = new Chart(ctxDaawa, {
+      type: "line",
+      data: {
+        labels: units,
+        datasets: [
+          {
+            label: "Daawa",
+            data: units.map(u => data[u].daawa),
+            borderColor: "rgba(34, 197, 94, 0.9)",
+            backgroundColor: "rgba(34, 197, 94, 0.3)",
+            tension: 0.35,
+            fill: true,
+            pointRadius: 3
+          },
+          {
+            label: "Target",
+            data: units.map(u => data[u].targetDaawa),
+            borderColor: "rgba(249, 115, 22, 0.9)",
+            backgroundColor: "rgba(249, 115, 22, 0.2)",
+            tension: 0.35,
+            fill: true,
+            borderDash: [5, 5],
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: "#e5e7eb" }, grid: { display: false } },
+          y: { ticks: { color: "#9ca3af" }, grid: { color: "rgba(55,65,81,0.6)" } }
+        },
+        plugins: {
+          legend: {
+            labels: { color: "#e5e7eb", usePointStyle: true, boxWidth: 8 }
+          }
+        }
+      }
+    });
+  }
+
+  function updateCharts() {
+    if (!zakatChart || !daawaChart) {
+      initCharts();
+      return;
+    }
+    zakatChart.data.datasets[0].data = units.map(u => data[u].zakat);
+    zakatChart.data.datasets[1].data = units.map(u => data[u].targetZakat);
+    zakatChart.update();
+
+    daawaChart.data.datasets[0].data = units.map(u => data[u].daawa);
+    daawaChart.data.datasets[1].data = units.map(u => data[u].targetDaawa);
+    daawaChart.update();
+  }
+
+  // --------- INITIAL UI DETAILS ---------
+  (function initTodayLabel() {
+    const span = document.getElementById("today-label");
+    const today = new Date();
+    const opts = { day: "2-digit", month: "short", year: "numeric" };
+    span.textContent = today.toLocaleDateString(undefined, opts);
+  })();
+
+</script>
+</body>
+</html>
